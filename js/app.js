@@ -165,7 +165,13 @@ const App = {
       $('.photo-pick').style.display = 'none';
       $('#cameraView').classList.remove('hidden');
     } catch (e) {
-      alert('无法打开相机: ' + e.message);
+      // Fallback: use file input with capture to trigger system camera
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = 'image/*';
+      inp.setAttribute('capture', 'environment');
+      inp.onchange = (ev) => this.gotPhoto(ev);
+      inp.click();
     }
   },
 
