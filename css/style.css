@@ -204,31 +204,37 @@ body {
   display: flex; gap: 12px; justify-content: center;
   margin-bottom: 8px;
 }
-.photo-actions .btn { flex: 1; max-width: 180px; }
 
-/* Camera viewfinder */
-.camera-view {
+/* File input styled as buttons — direct tap, no JS click */
+.file-btn {
   position: relative;
-  width: 100%;
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: #000;
-}
-.camera-view video {
-  width: 100%; display: block;
-  max-height: 55vh;
-  object-fit: cover;
-}
-.capture-btn {
-  position: absolute;
-  bottom: 20px; left: 50%; transform: translateX(-50%);
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  border: 4px solid #fff;
-  background: rgba(255,255,255,0.3);
-  font-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  flex: 1;
+  max-width: 180px;
+  overflow: hidden;
+  text-align: center;
+}
+.file-btn-camera {
+  background: var(--accent); color: #fff;
+}
+.file-btn-gallery {
+  background: transparent; color: var(--accent-dark);
+  border: 1px solid var(--warm-beige);
+}
+.file-btn-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .photo-preview { text-align: center; }
