@@ -200,37 +200,35 @@ body {
 .photo-placeholder p { color: var(--text-secondary); margin-bottom: 16px; }
 .skip-btn { margin-top: 16px; }
 
-.photo-file-input {
-  display: block;
+.photo-actions {
+  display: flex; gap: 12px; justify-content: center;
+  margin-bottom: 8px;
+}
+.photo-actions .btn { flex: 1; max-width: 180px; }
+
+/* Camera viewfinder */
+.camera-view {
+  position: relative;
   width: 100%;
-  padding: 12px 24px;
-  border: 1px solid var(--warm-beige);
-  border-radius: var(--radius-xs);
-  font-size: 14px;
-  font-family: var(--font-sans);
-  background: var(--paper);
-  color: var(--text);
-  cursor: pointer;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
 }
-.photo-file-input::file-selector-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: var(--radius-xs);
-  font-size: 14px;
-  font-weight: 500;
-  font-family: var(--font-sans);
-  background: var(--accent);
-  color: white;
-  cursor: pointer;
-  margin-right: 12px;
-  transition: background 0.15s;
+.camera-view video {
+  width: 100%; display: block;
+  max-height: 55vh;
+  object-fit: cover;
 }
-.photo-file-input::file-selector-button:hover {
-  background: var(--accent-dark);
+.capture-btn {
+  position: absolute;
+  bottom: 20px; left: 50%; transform: translateX(-50%);
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: rgba(255,255,255,0.3);
+  font-size: 28px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
 }
 
 .photo-preview { text-align: center; }
