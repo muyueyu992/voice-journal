@@ -3,15 +3,15 @@
    支持: 智谱 GLM / Gemini / 通义千问
    ============================================ */
 
-const JOURNAL_PROMPT_WITH_PHOTO = `用户拍了照片并说："{TRANSCRIPT}"
-结合图片，对原话做极简润色：最多比原话新增10个字，不要扩写！不要改写成本！保持原话风格。严格JSON:
-{"title":"标题6字内","journal":"润色后文字(比原话最多多10字)","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1"],"poem":"5字内"}
-只返回JSON。`;
+const JOURNAL_PROMPT_WITH_PHOTO = `你是手帐助手。用户说："{TRANSCRIPT}"，并附了照片。
+请把用户的话润色成手帐文案（最多比原话多15字），保持口语风格，不要写成散文。
+只输出JSON，不要任何解释：
+{"title":"手帐标题(6字内)","journal":"润色后的手帐文字","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签"],"poem":"一句小诗(5字内)"}`;
 
-const JOURNAL_PROMPT_TEXT_ONLY = `用户说："{TRANSCRIPT}"
-做极简润色：最多比原话新增10个字，不要扩写！不要改写成本！保持原话风格。严格JSON:
-{"title":"标题6字内","journal":"润色后文字(比原话最多多10字)","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1"],"poem":"5字内"}
-只返回JSON。`;
+const JOURNAL_PROMPT_TEXT_ONLY = `你是手帐助手。用户说："{TRANSCRIPT}"。
+请把用户的话润色成手帐文案（最多比原话多15字），保持口语风格，不要写成散文。
+只输出JSON，不要任何解释：
+{"title":"手帐标题(6字内)","journal":"润色后的手帐文字","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签"],"poem":"一句小诗(5字内)"}`;
 
 function buildZhipuContent(imageBase64, transcript) {
   const t = transcript || '（用户没有说话）';
@@ -116,11 +116,7 @@ class AIClient {
       return JSON.parse(cleaned);
     } catch (e) {
       try { return JSON.parse(text.trim()); } catch (e2) {
-        return {
-          title: '此刻',
-          journal: text.substring(0, 100),
-          mood: '平静', tags: ['日常'], poem: '活在当下'
-        };
+        throw new Error('AI 返回格式异常，请点"换一个"重试');
       }
     }
   }
