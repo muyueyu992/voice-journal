@@ -157,6 +157,8 @@ const App = {
       document.getElementById('photoPlaceholder').classList.add('hidden');
     };
     reader.readAsDataURL(file);
+    // Reset input to allow re-selecting same file, and prevent double-trigger
+    e.target.value = '';
   },
 
   skipPhoto() {
@@ -166,7 +168,9 @@ const App = {
   },
 
   retakePhoto() {
-    document.getElementById('photoInput').click();
+    const input = document.getElementById('photoInput');
+    input.value = '';
+    input.click();
   },
 
   /* --- Voice Step --- */
