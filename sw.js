@@ -1,4 +1,4 @@
-const CACHE_NAME = 'voice-journal-v5f';
+const CACHE_NAME = 'voice-journal-v5g';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
