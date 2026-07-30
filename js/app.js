@@ -11,6 +11,7 @@ const App = {
   isRecording: false,
   currentDetailIndex: -1,
   editPhotoData: null,
+  currentFilter: 'all',
 
   /* ============ Init ============ */
   async init() {
@@ -38,6 +39,11 @@ const App = {
     document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
     document.getElementById('useCustomKeyBtn').addEventListener('click', () => this.showCustomKey());
     document.getElementById('useDefaultKeyBtn').addEventListener('click', () => this.useDefaultKey());
+
+    // Filter
+    document.querySelectorAll('.filter-btn').forEach((btn) => {
+      btn.addEventListener('click', () => this.setFilter(btn.dataset.filter));
+    });
 
     // New entry flow
     document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
@@ -77,19 +83,25 @@ const App = {
     const container = document.getElementById('entryList');
     const emptyState = document.getElementById('emptyState');
     const entryCount = document.getElementById('entryCount');
+    const filterBar = document.getElementById('filterBar');
 
     this.entries = await Storage.getEntries();
-    entryCount.textContent = `${this.entries.length} 篇手账`;
+    const filtered = this.filterEntries(this.entries, this.currentFilter);
 
-    if (this.entries.length === 0) {
+    entryCount.textContent = `${filtered.length} 篇手账`;
+    filterBar.classList.toggle('hidden', this.entries.length === 0);
+
+    if (filtered.length === 0) {
       emptyState.classList.remove('hidden');
       container.innerHTML = '';
       return;
     }
 
     emptyState.classList.add('hidden');
-    container.innerHTML = this.entries.map((entry, i) => `
-      <div class="entry-card" data-index="${i}">
+    container.innerHTML = filtered.map((entry, i) => {
+      const origIdx = this.entries.indexOf(entry);
+      return `
+      <div class="entry-card" data-index="${origIdx}">
         <div class="card-photo" style="${entry.photo ? `background-image:url(${entry.photo})` : 'background: linear-gradient(135deg, #fdf2e9, #f5e6d3);'}"></div>
         <div class="card-body">
           <div class="card-header">
@@ -104,7 +116,7 @@ const App = {
           </div>
         </div>
       </div>
-    `).join('');
+    `}).join('');
 
     // Card click → detail
     container.querySelectorAll('.entry-card').forEach((card) => {
@@ -112,7 +124,44 @@ const App = {
         const idx = parseInt(card.dataset.index);
         this.openDetail(idx);
       });
+      // Long-press → delete
+      card.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const idx = parseInt(card.dataset.index);
+        this.confirmDeleteFromList(idx);
+      });
     });
+  },
+
+  /* ============ Filter ============ */
+  filterEntries(entries, filter) {
+    if (filter === 'all') return entries;
+    const now = new Date();
+    let start;
+    if (filter === 'week') {
+      start = new Date(now);
+      start.setDate(now.getDate() - 7);
+    } else if (filter === 'month') {
+      start = new Date(now);
+      start.setDate(now.getDate() - 30);
+    }
+    return entries.filter((e) => new Date(e.date) >= start);
+  },
+
+  setFilter(filter) {
+    this.currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach((b) => {
+      b.classList.toggle('active', b.dataset.filter === filter);
+    });
+    this.renderHome();
+  },
+
+  async confirmDeleteFromList(idx) {
+    const entry = this.entries[idx];
+    if (!entry) return;
+    if (!confirm('确定删除「' + entry.title + '」吗？')) return;
+    await Storage.deleteEntry(entry.id);
+    await this.renderHome();
   },
 
   /* ============ New Entry Flow ============ */
