@@ -42,7 +42,10 @@ const App = {
 
     // New entry flow
     document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
+    document.getElementById('cameraBtn').addEventListener('click', () => this.startCamera());
+    document.getElementById('galleryBtn').addEventListener('click', () => { document.getElementById('photoInput').click(); });
     document.getElementById('photoInput').addEventListener('change', (e) => this.handlePhoto(e));
+    document.getElementById('captureBtn').addEventListener('click', () => this.captureFromVideo());
     document.getElementById('retakePhotoBtn').addEventListener('click', () => this.retakePhoto());
     document.getElementById('usePhotoBtn').addEventListener('click', () => this.goToStep('voice'));
     document.getElementById('skipPhotoBtn').addEventListener('click', () => this.skipPhoto());
@@ -126,15 +129,18 @@ const App = {
   },
 
   closeNewEntry() {
+    this.stopCamera();
     document.getElementById('newEntryOverlay').classList.remove('active');
     this.resetNewEntry();
   },
 
   resetNewEntry() {
+    this.stopCamera();
     this.currentPhoto = null;
     this.currentTranscript = '';
     this.generatedJournal = null;
     document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('cameraView').classList.add('hidden');
     document.getElementById('photoPlaceholder').classList.remove('hidden');
     document.getElementById('photoThumbWrapper').classList.add('hidden');
     document.getElementById('transcriptDisplay').textContent = '';
@@ -167,15 +173,55 @@ const App = {
   },
 
   skipPhoto() {
+    this.stopCamera();
     this.currentPhoto = null;
     document.getElementById('photoThumbWrapper').classList.add('hidden');
     this.goToStep('voice');
   },
 
+  async startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      this._cameraStream = stream;
+      const video = document.getElementById('cameraVideo');
+      video.srcObject = stream;
+      document.getElementById('photoPlaceholder').classList.add('hidden');
+      document.getElementById('cameraView').classList.remove('hidden');
+    } catch (e) {
+      // Camera not available, fall back to file input
+      document.getElementById('photoInput').click();
+    }
+  },
+
+  captureFromVideo() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    this.currentPhoto = canvas.toDataURL('image/jpeg', 0.85);
+    this.stopCamera();
+    document.getElementById('cameraView').classList.add('hidden');
+    document.getElementById('photoPreviewImg').src = this.currentPhoto;
+    document.getElementById('photoThumb').src = this.currentPhoto;
+    document.getElementById('photoThumbWrapper').classList.remove('hidden');
+    document.getElementById('photoPreview').classList.remove('hidden');
+  },
+
+  stopCamera() {
+    if (this._cameraStream) {
+      this._cameraStream.getTracks().forEach(t => t.stop());
+      this._cameraStream = null;
+    }
+  },
+
   retakePhoto() {
-    const input = document.getElementById('photoInput');
-    input.value = '';
-    input.click();
+    document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('photoPlaceholder').classList.remove('hidden');
+    this.currentPhoto = null;
   },
 
   /* --- Voice Step --- */
