@@ -3,13 +3,13 @@
    支持: 智谱 GLM / Gemini / 通义千问
    ============================================ */
 
-const JOURNAL_PROMPT_WITH_PHOTO = `根据用户原话和照片，生成手帐。原话："{TRANSCRIPT}"
-要求：保持原话的口语风格，微调通顺即可，最多新增15字。输出纯JSON对象：
-{"title":"标题≤6字","journal":"润色文字","mood":"开心|平静|感动|兴奋|治愈|疲惫|感恩","tags":["标签1","标签2"],"poem":"短诗≤5字"}`;
+const JOURNAL_PROMPT_WITH_PHOTO = `用户原话："{TRANSCRIPT}"，附带照片。
+根据原话和照片，生成一篇温暖的手帐。只输出JSON，字段名固定如下，不要修改字段名：
+{"title":"手帐标题6字内","journal":"润色后的手帐正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1","标签2"],"poem":"短诗5字内"}`;
 
-const JOURNAL_PROMPT_TEXT_ONLY = `根据用户原话生成手帐。原话："{TRANSCRIPT}"
-要求：保持原话的口语风格，微调通顺即可，最多新增15字。输出纯JSON对象：
-{"title":"标题≤6字","journal":"润色文字","mood":"开心|平静|感动|兴奋|治愈|疲惫|感恩","tags":["标签1","标签2"],"poem":"短诗≤5字"}`;
+const JOURNAL_PROMPT_TEXT_ONLY = `用户原话："{TRANSCRIPT}"。
+根据原话生成一篇温暖的手帐。只输出JSON，字段名固定如下，不要修改字段名：
+{"title":"手帐标题6字内","journal":"润色后的手帐正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1","标签2"],"poem":"短诗5字内"}`;
 
 function buildZhipuContent(imageBase64, transcript) {
   const t = transcript || '（用户没有说话）';
@@ -38,8 +38,7 @@ const PROVIDERS = {
       return {
         model: hasImage ? 'glm-4v-flash' : 'glm-4-flash',
         messages: [{ role: 'user', content: buildZhipuContent(imageBase64, transcript) }],
-        temperature: 0.9, max_tokens: 1024,
-        response_format: { type: 'json_object' }
+        temperature: 0.9, max_tokens: 1024
       };
     },
     parseResponse(data) {
@@ -111,15 +110,26 @@ class AIClient {
   }
 
   parseJournalJSON(text) {
+    let obj = null;
     // Extract JSON from possibly mixed Chinese+JSON response
     const m = text.match(/\{[\s\S]*\}/);
     if (m) {
-      try { return JSON.parse(m[0]); } catch (e) {}
+      try { obj = JSON.parse(m[0]); } catch (e) {}
     }
-    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    try { return JSON.parse(cleaned); } catch (e) {
-      throw new Error('AI 返回格式异常，请点"换一个"重试');
+    if (!obj) {
+      const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+      try { obj = JSON.parse(cleaned); } catch (e) {
+        throw new Error('AI 返回格式异常，请点"换一个"重试');
+      }
     }
+    // Fill missing fields with safe defaults
+    return {
+      title: obj.title || obj.Title || obj.header || '此刻',
+      journal: obj.journal || obj.Journal || obj.content || obj.text || text.substring(0, 80),
+      mood: obj.mood || obj.Mood || obj.emotion || '平静',
+      tags: obj.tags || obj.Tags || obj.labels || ['日常'],
+      poem: obj.poem || obj.Poem || obj.verse || ''
+    };
   }
 
   static getProviders() {
