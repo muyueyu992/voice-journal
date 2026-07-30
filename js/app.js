@@ -42,9 +42,16 @@ const App = {
 
     // New entry flow
     document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
-    document.querySelectorAll('.file-btn-input').forEach(input => {
-      input.addEventListener('change', (e) => this.handlePhoto(e));
+    document.getElementById('cameraBtn').addEventListener('click', () => this.openCamera());
+    document.getElementById('galleryBtn').addEventListener('click', () => {
+      const inp = document.getElementById('photoInput');
+      inp.value = '';
+      inp.click();
     });
+    document.getElementById('photoInput').addEventListener('change', (e) => this.handlePhoto(e));
+    document.getElementById('cancelCameraBtn').addEventListener('click', () => this.closeCamera());
+    document.getElementById('captureBtn').addEventListener('click', () => this.snapPhoto());
+    document.getElementById('pasteHintBtn').addEventListener('click', () => this.pastePhoto());
     document.getElementById('retakePhotoBtn').addEventListener('click', () => this.retakePhoto());
     document.getElementById('usePhotoBtn').addEventListener('click', () => this.goToStep('voice'));
     document.getElementById('skipPhotoBtn').addEventListener('click', () => this.skipPhoto());
@@ -128,15 +135,18 @@ const App = {
   },
 
   closeNewEntry() {
+    this.closeCamera();
     document.getElementById('newEntryOverlay').classList.remove('active');
     this.resetNewEntry();
   },
 
   resetNewEntry() {
+    this.closeCamera();
     this.currentPhoto = null;
     this.currentTranscript = '';
     this.generatedJournal = null;
     document.getElementById('photoPreview').classList.add('hidden');
+    document.getElementById('cameraView').classList.add('hidden');
     document.getElementById('photoPlaceholder').classList.remove('hidden');
     document.getElementById('photoThumbWrapper').classList.add('hidden');
     document.getElementById('transcriptDisplay').textContent = '';
@@ -169,9 +179,77 @@ const App = {
   },
 
   skipPhoto() {
+    this.closeCamera();
     this.currentPhoto = null;
     document.getElementById('photoThumbWrapper').classList.add('hidden');
     this.goToStep('voice');
+  },
+
+  async openCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      this._cameraStream = stream;
+      document.getElementById('cameraVideo').srcObject = stream;
+      document.getElementById('photoPlaceholder').classList.add('hidden');
+      document.getElementById('cameraView').classList.remove('hidden');
+    } catch (e) {
+      const inp = document.getElementById('photoInput');
+      inp.value = '';
+      inp.click();
+    }
+  },
+
+  snapPhoto() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1920;
+    canvas.height = video.videoHeight || 1080;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    this.currentPhoto = canvas.toDataURL('image/jpeg', 0.85);
+    this.closeCamera();
+    document.getElementById('cameraView').classList.add('hidden');
+    this.showPhotoPreview();
+  },
+
+  closeCamera() {
+    if (this._cameraStream) {
+      this._cameraStream.getTracks().forEach(t => t.stop());
+      this._cameraStream = null;
+    }
+    document.getElementById('cameraView').classList.add('hidden');
+  },
+
+  async pastePhoto() {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith('image/')) {
+            const blob = await item.getType(type);
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              this.currentPhoto = ev.target.result;
+              this.showPhotoPreview();
+            };
+            reader.readAsDataURL(blob);
+            return;
+          }
+        }
+      }
+      alert('剪贴板中没有图片，请先从相册复制一张照片');
+    } catch (e) {
+      alert('无法读取剪贴板，请尝试拍照或相册按钮');
+    }
+  },
+
+  showPhotoPreview() {
+    document.getElementById('photoPreviewImg').src = this.currentPhoto;
+    document.getElementById('photoThumb').src = this.currentPhoto;
+    document.getElementById('photoThumbWrapper').classList.remove('hidden');
+    document.getElementById('photoPreview').classList.remove('hidden');
   },
 
   retakePhoto() {
