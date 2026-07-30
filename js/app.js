@@ -69,6 +69,7 @@ const App = {
     document.getElementById('cancelEditBtn').addEventListener('click', () => this.cancelEdit());
     document.getElementById('saveEditBtn').addEventListener('click', () => this.saveEdit());
     document.getElementById('editPhotoInput').addEventListener('change', (e) => this.handleEditPhoto(e));
+    document.getElementById('deleteEntryBtn').addEventListener('click', () => this.deleteEntry());
   },
 
   /* ============ Rendering ============ */
@@ -421,6 +422,15 @@ const App = {
     document.getElementById('detailModal').classList.remove('active');
     this.editPhotoData = null;
     this.setDetailViewMode();
+  },
+
+  async deleteEntry() {
+    const entry = this.entries[this.currentDetailIndex];
+    if (!entry) return;
+    if (!confirm('确定删除这篇手账吗？')) return;
+    await Storage.deleteEntry(entry.id);
+    this.closeDetail();
+    await this.renderHome();
   },
 
   /* ============ Settings ============ */
