@@ -57,10 +57,8 @@
           <div id="photoPlaceholder" class="photo-placeholder">
             <span class="placeholder-icon">📷</span>
             <p>拍一张照片（可选）</p>
-            <label class="btn btn-primary">
-              <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
-              拍照或选择照片
-            </label>
+            <button id="photoBtn" class="btn btn-primary">拍照或选择照片</button>
+            <input type="file" id="photoInput" accept="image/*" capture="environment" hidden>
             <button id="skipPhotoBtn" class="btn btn-outline skip-btn">跳过，直接记录文字</button>
           </div>
           <div id="photoPreview" class="photo-preview hidden">
