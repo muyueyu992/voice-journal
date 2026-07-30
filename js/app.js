@@ -198,10 +198,15 @@ const App = {
     };
 
     this.recognition.onerror = (e) => {
-      console.warn('Speech error:', e.error);
+      const hint = document.getElementById('recordHint');
       if (e.error === 'not-allowed') {
-        document.getElementById('voiceFallback').classList.remove('hidden');
+        hint.textContent = '麦克风权限未开启，请使用下方文字输入';
+      } else if (e.error === 'no-speech') {
+        hint.textContent = '未检测到语音，请再试一次或使用文字输入';
+      } else {
+        hint.textContent = '语音识别失败，请使用下方文字输入';
       }
+      hint.classList.remove('hidden');
       this.isRecording = false;
       this.updateRecordButton();
     };
