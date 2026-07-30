@@ -217,8 +217,16 @@ const App = {
       this.updateRecordButton();
     };
 
-    this.recognition.start();
-    this.isRecording = true;
+    try {
+      this.recognition.start();
+      this.isRecording = true;
+    } catch (err) {
+      const hint = document.getElementById('recordHint');
+      hint.textContent = '语音启动失败，请使用下方文字输入';
+      hint.classList.remove('hidden');
+      this.isRecording = false;
+      this.updateRecordButton();
+    }
     this.updateRecordButton();
   },
 
