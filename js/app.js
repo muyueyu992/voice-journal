@@ -41,6 +41,7 @@ const App = {
 
     // New entry flow
     document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
+    document.getElementById('photoBtn').addEventListener('click', () => document.getElementById('photoInput').click());
     document.getElementById('photoInput').addEventListener('change', (e) => this.handlePhoto(e));
     document.getElementById('retakePhotoBtn').addEventListener('click', () => this.retakePhoto());
     document.getElementById('usePhotoBtn').addEventListener('click', () => this.goToStep('voice'));
@@ -174,7 +175,11 @@ const App = {
     if (this.isRecording) return;
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    if (!SpeechRecognition) {
+      document.getElementById('recordHint').textContent = '当前浏览器不支持语音，请使用下方文字输入';
+      document.getElementById('recordHint').classList.remove('hidden');
+      return;
+    }
 
     this.recognition = new SpeechRecognition();
     this.recognition.lang = 'zh-CN';
