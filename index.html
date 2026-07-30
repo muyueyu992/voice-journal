@@ -20,7 +20,7 @@
         <div class="header-brand">
           <span class="brand-icon">📔</span>
           <div>
-            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5l</span></h1>
+            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5m</span></h1>
             <span id="entryCount" class="subtitle">0 篇手账</span>
           </div>
         </div>
@@ -58,16 +58,16 @@
             <span class="placeholder-icon">📷</span>
             <p>拍一张照片（可选）</p>
             <div class="photo-actions">
-              <button id="cameraBtn" class="btn btn-primary">📷 拍照</button>
-              <button id="galleryBtn" class="btn btn-outline">🖼️ 从相册选择</button>
+              <label class="file-btn file-btn-camera">
+                📷 拍照
+                <input type="file" accept="image/*" capture="environment" class="file-btn-input">
+              </label>
+              <label class="file-btn file-btn-gallery">
+                🖼️ 从相册选择
+                <input type="file" accept="image/*" class="file-btn-input">
+              </label>
             </div>
-            <input type="file" id="photoInput" accept="image/*" class="hidden">
             <button id="skipPhotoBtn" class="btn btn-outline skip-btn">跳过，直接记录文字</button>
-          </div>
-          <!-- Camera viewfinder -->
-          <div id="cameraView" class="camera-view hidden">
-            <video id="cameraVideo" autoplay playsinline></video>
-            <button id="captureBtn" class="capture-btn">📸</button>
           </div>
           <div id="photoPreview" class="photo-preview hidden">
             <img id="photoPreviewImg" src="" alt="预览">
