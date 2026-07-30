@@ -58,8 +58,7 @@ const App = {
     document.getElementById('regenerateBtn').addEventListener('click', () => this.generateJournal());
 
     // Voice fallback
-    document.getElementById('manualTextInput').addEventListener('input', (e) => {
-      this.currentTranscript = e.target.value;
+    document.getElementById('manualTextInput').addEventListener('input', () => {
       this.updateGenerateButton();
     });
 
@@ -250,8 +249,9 @@ const App = {
   },
 
   updateGenerateButton() {
-    const hasText = this.currentTranscript.trim().length > 0;
-    document.getElementById('generateBtn').disabled = !hasText;
+    const voice = this.currentTranscript.trim();
+    const manual = document.getElementById('manualTextInput').value.trim();
+    document.getElementById('generateBtn').disabled = !(voice || manual);
   },
 
   goToStep(step) {
@@ -268,7 +268,10 @@ const App = {
 
   /* --- Generate --- */
   async generateJournal() {
-    if (!this.currentTranscript.trim()) return;
+    const voice = this.currentTranscript.trim();
+    const manual = document.getElementById('manualTextInput').value.trim();
+    const combined = [voice, manual].filter(Boolean).join('，');
+    if (!combined) return;
 
     this.goToStep('result');
     document.getElementById('resultLoading').classList.remove('hidden');
@@ -277,7 +280,7 @@ const App = {
 
     try {
       const base64 = this.currentPhoto ? this.currentPhoto.split(',')[1] : null;
-      const result = await this.api.generateJournal(base64, this.currentTranscript.trim());
+      const result = await this.api.generateJournal(base64, combined);
 
       document.getElementById('resultLoading').classList.add('hidden');
       document.getElementById('resultContent').classList.remove('hidden');
