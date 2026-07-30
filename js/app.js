@@ -1,532 +1,446 @@
 /* ============================================
-   声音手账 Voice Journal - Main App
+   声音手账 v6 — App
    ============================================ */
 
 const App = {
+
+  /* ===== state ===== */
   api: null,
   entries: [],
-  currentPhoto: null,
-  currentTranscript: '',
+  photo: null,         // base64 data URL or null
+  transcript: '',      // voice recognition result
+  generated: null,     // latest AI result
+  recognizing: false,
   recognition: null,
-  isRecording: false,
-  currentDetailIndex: -1,
-  editPhotoData: null,
-  photoSelecting: false,
+  detailIdx: -1,
+  editPhoto: null,
 
-  /* ============ Init ============ */
+  /* ===== init ===== */
   async init() {
-    const settings = await Storage.getSettings();
-    const apiKey = settings.apiKey || '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j';
-    this.api = new AIClient(settings.provider || 'zhipu', apiKey);
+    const s = await Storage.getSettings();
+    const key = s.apiKey || '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j';
+    this.api = new AIClient(s.provider || 'zhipu', key);
     this.entries = await Storage.getEntries();
-    this.bindEvents();
-    this.renderHome();
-    this.checkSpeechSupport();
+    this.bind();
+    this.renderList();
   },
 
-  checkSpeechSupport() {
-    // Web Speech API 支持检测，语音按钮始终显示，文字输入作为备选
-  },
+  /* ===== event binding ===== */
+  bind() {
+    $('#fab').addEventListener('click', () => this.openNew());
+    $('#closeNewBtn').addEventListener('click', () => this.closeNew());
+    $('#skipPhotoBtn').addEventListener('click', () => this.skipPhoto());
+    $('#retakeBtn').addEventListener('click', () => this.retake());
+    $('#usePhotoBtn').addEventListener('click', () => this.goVoice());
 
-  /* ============ Event Binding ============ */
-  bindEvents() {
-    // FAB
-    document.getElementById('fabBtn').addEventListener('click', () => this.openNewEntry());
+    // Record button: mouse + touch
+    const rb = $('#recordBtn');
+    rb.addEventListener('mousedown', () => this.startMic());
+    rb.addEventListener('mouseup', () => this.stopMic());
+    rb.addEventListener('mouseleave', () => { if (this.recognizing) this.stopMic(); });
+    rb.addEventListener('touchstart', (e) => { e.preventDefault(); this.startMic(); });
+    rb.addEventListener('touchend', (e) => { e.preventDefault(); this.stopMic(); });
+
+    $('#textInput').addEventListener('input', () => this.checkGenBtn());
+    $('#genBtn').addEventListener('click', () => this.generate());
+    $('#saveBtn').addEventListener('click', () => this.save());
+    $('#discardBtn').addEventListener('click', () => this.closeNew());
+    $('#regenBtn').addEventListener('click', () => this.generate());
+    $('#retryBtn').addEventListener('click', () => this.generate());
+
+    // Detail
+    $('#closeDetailBtn').addEventListener('click', () => this.closeDetail());
+    $('#editBtn').addEventListener('click', () => this.editMode());
+    $('#cancelEditBtn').addEventListener('click', () => this.cancelEdit());
+    $('#saveEditBtn').addEventListener('click', () => this.saveEdit());
+    $('#editPhotoInput').addEventListener('change', (e) => this.gotEditPhoto(e));
+    $('#deleteBtn').addEventListener('click', () => this.deleteEntry());
 
     // Settings
-    document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
-    document.getElementById('closeSettingsBtn').addEventListener('click', () => this.closeSettings());
-    document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
-    document.getElementById('useCustomKeyBtn').addEventListener('click', () => this.showCustomKey());
-    document.getElementById('useDefaultKeyBtn').addEventListener('click', () => this.useDefaultKey());
-
-    // New entry flow
-    document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
-    document.querySelectorAll('.file-btn-overlay').forEach(input => {
-      input.addEventListener('change', (e) => this.handlePhoto(e));
-    });
-    document.getElementById('retakePhotoBtn').addEventListener('click', () => this.retakePhoto());
-    document.getElementById('usePhotoBtn').addEventListener('click', () => this.goToStep('voice'));
-    document.getElementById('skipPhotoBtn').addEventListener('click', () => this.skipPhoto());
-    document.getElementById('recordBtn').addEventListener('mousedown', () => this.startRecording());
-    document.getElementById('recordBtn').addEventListener('mouseup', () => this.stopRecording());
-    document.getElementById('recordBtn').addEventListener('touchstart', (e) => { e.preventDefault(); this.startRecording(); });
-    document.getElementById('recordBtn').addEventListener('touchend', (e) => { e.preventDefault(); this.stopRecording(); });
-    document.getElementById('recordBtn').addEventListener('mouseleave', () => { if (this.isRecording) this.stopRecording(); });
-    document.getElementById('generateBtn').addEventListener('click', () => this.generateJournal());
-    document.getElementById('saveJournalBtn').addEventListener('click', () => this.saveJournal());
-    document.getElementById('discardJournalBtn').addEventListener('click', () => this.closeNewEntry());
-    document.getElementById('retryGenerateBtn').addEventListener('click', () => this.generateJournal());
-    document.getElementById('regenerateBtn').addEventListener('click', () => this.generateJournal());
-
-    // Voice fallback
-    document.getElementById('manualTextInput').addEventListener('input', () => {
-      this.updateGenerateButton();
-    });
-
-    // Detail modal
-    document.getElementById('closeDetailBtn').addEventListener('click', () => this.closeDetail());
-    document.getElementById('editEntryBtn').addEventListener('click', () => this.enterEditMode());
-    document.getElementById('cancelEditBtn').addEventListener('click', () => this.cancelEdit());
-    document.getElementById('saveEditBtn').addEventListener('click', () => this.saveEdit());
-    document.getElementById('editPhotoInput').addEventListener('change', (e) => this.handleEditPhoto(e));
-    document.getElementById('deleteEntryBtn').addEventListener('click', () => this.deleteEntry());
+    $('#settingsBtn').addEventListener('click', () => this.openSettings());
+    $('#closeSettingsBtn').addEventListener('click', () => this.closeSettings());
+    $('#showCustomKeyBtn').addEventListener('click', () => { $('#customKeyBox').classList.remove('hidden'); $('#showCustomKeyBtn').classList.add('hidden'); });
+    $('#resetKeyBtn').addEventListener('click', () => this.resetKey());
+    $('#saveKeyBtn').addEventListener('click', () => this.saveKey());
   },
 
-  /* ============ Rendering ============ */
-  async renderHome() {
-    const container = document.getElementById('entryList');
-    const emptyState = document.getElementById('emptyState');
-    const entryCount = document.getElementById('entryCount');
-
+  /* ===== list ===== */
+  async renderList() {
     this.entries = await Storage.getEntries();
-    entryCount.textContent = `${this.entries.length} 篇手账`;
+    $('#countBadge').textContent = `${this.entries.length} 篇`;
+    const list = $('#entryList');
+    const emp = $('#emptyHint');
 
-    if (this.entries.length === 0) {
-      emptyState.classList.remove('hidden');
-      container.innerHTML = '';
+    if (!this.entries.length) {
+      emp.classList.remove('hidden');
+      list.innerHTML = '';
       return;
     }
-
-    emptyState.classList.add('hidden');
-    container.innerHTML = this.entries.map((entry, i) => `
-      <div class="entry-card" data-index="${i}">
-        <div class="card-photo" style="${entry.photo ? `background-image:url(${entry.photo})` : 'background: linear-gradient(135deg, #fdf2e9, #f5e6d3);'}"></div>
+    emp.classList.add('hidden');
+    list.innerHTML = this.entries.map((e, i) => `
+      <div class="card" data-idx="${i}">
+        <div class="card-img" style="${e.photo ? `background-image:url(${e.photo})` : 'background:linear-gradient(135deg,#fdf2e9,#f5e6d3)'}"></div>
         <div class="card-body">
-          <div class="card-header">
-            <span class="card-mood">${this.moodEmoji(entry.mood)}</span>
-            <span class="card-date">${this.formatDate(entry.date)}</span>
+          <div class="card-head">
+            <span class="card-mood">${this.moodIcon(e.mood)}</span>
+            <span class="card-date">${this.fmtDate(e.date)}</span>
           </div>
-          <h3 class="card-title">${this.esc(entry.title)}</h3>
-          <p class="card-preview">${this.esc(entry.journal).substring(0, 60)}...</p>
-          ${entry.poem ? `<p class="card-poem">「${this.esc(entry.poem)}」</p>` : ''}
-          <div class="card-tags">
-            ${(entry.tags || []).map((t) => `<span class="tag">#${this.esc(t)}</span>`).join(' ')}
-          </div>
+          <h3 class="card-title">${this.esc(e.title)}</h3>
+          <p class="card-preview">${this.esc(e.journal).substring(0,60)}...</p>
+          ${e.poem ? `<p class="card-poem">「${this.esc(e.poem)}」</p>` : ''}
+          <div class="tags">${(e.tags||[]).map(t=>`<span class="tag">#${this.esc(t)}</span>`).join('')}</div>
         </div>
       </div>
     `).join('');
 
-    // Card click → detail
-    container.querySelectorAll('.entry-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.index);
-        this.openDetail(idx);
-      });
+    list.querySelectorAll('.card').forEach(c => {
+      c.addEventListener('click', () => this.openDetail(parseInt(c.dataset.idx)));
     });
   },
 
-  /* ============ New Entry Flow ============ */
-  openNewEntry() {
+  /* ===== new entry flow ===== */
+  openNew() {
     if (!this.api) { this.openSettings(); return; }
-
-    document.getElementById('newEntryOverlay').classList.add('active');
-    this.resetNewEntry();
-    document.getElementById('stepPhoto').classList.remove('hidden');
-    document.getElementById('stepVoice').classList.add('hidden');
-    document.getElementById('stepResult').classList.add('hidden');
+    $('#newOverlay').classList.add('on');
+    this.resetNew();
   },
 
-  closeNewEntry() {
-    document.getElementById('newEntryOverlay').classList.remove('active');
-    this.resetNewEntry();
+  closeNew() {
+    this.stopMic();
+    $('#newOverlay').classList.remove('on');
+    this.resetNew();
   },
 
-  resetNewEntry() {
-    this.currentPhoto = null;
-    this.currentTranscript = '';
-    this.generatedJournal = null;
-    document.getElementById('photoPreview').classList.add('hidden');
-    document.getElementById('photoPlaceholder').classList.remove('hidden');
-    document.getElementById('photoThumbWrapper').classList.add('hidden');
-    document.getElementById('transcriptDisplay').textContent = '';
-    document.getElementById('recordHint').classList.remove('hidden');
-    document.getElementById('generateBtn').disabled = true;
-    document.getElementById('manualTextInput').value = '';
+  resetNew() {
+    this.photo = null;
+    this.transcript = '';
+    this.generated = null;
+    this.stopMic();
+    $('#photoStep').classList.remove('hidden');
+    $('#voiceStep').classList.add('hidden');
+    $('#resultStep').classList.add('hidden');
+    $('#photoPreviewBox').classList.add('hidden');
+    $('#miniPhoto').classList.add('hidden');
+    $('#transcriptBox').textContent = '';
+    $('#micHint').classList.remove('hidden');
+    $('#textInput').value = '';
+    $('#genBtn').disabled = true;
   },
 
-  /* --- Photo Step --- */
-  handlePhoto(e) {
-    // Prevent double-trigger on file picker dismiss
-    if (this.photoSelecting) { e.target.value = ''; return; }
-    const file = e.target.files[0];
-    if (!file) { this.photoSelecting = false; return; }
-    this.photoSelecting = true;
-
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      this.currentPhoto = ev.target.result;
-      document.getElementById('photoPreviewImg').src = this.currentPhoto;
-      document.getElementById('photoThumb').src = this.currentPhoto;
-      document.getElementById('photoThumbWrapper').classList.remove('hidden');
-      document.getElementById('photoPreview').classList.remove('hidden');
-      document.getElementById('photoPlaceholder').classList.add('hidden');
-      setTimeout(() => { this.photoSelecting = false; }, 500);
+  /* photo */
+  gotPhoto(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = (ev) => {
+      this.photo = ev.target.result;
+      $('#previewImg').src = this.photo;
+      $('#miniPhotoImg').src = this.photo;
+      $('#miniPhoto').classList.remove('hidden');
+      $('#photoPreviewBox').classList.remove('hidden');
+      e.target.closest('.photo-pick').style.display = 'none';
     };
-    reader.onerror = () => { this.photoSelecting = false; };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(f);
     e.target.value = '';
   },
 
   skipPhoto() {
-    this.currentPhoto = null;
-    document.getElementById('photoThumbWrapper').classList.add('hidden');
-    this.goToStep('voice');
+    this.photo = null;
+    $('#miniPhoto').classList.add('hidden');
+    this.goVoice();
   },
 
-  retakePhoto() {
-    document.getElementById('photoPreview').classList.add('hidden');
-    document.getElementById('photoPlaceholder').classList.remove('hidden');
-    this.currentPhoto = null;
+  retake() {
+    this.photo = null;
+    $('#photoPreviewBox').classList.add('hidden');
+    // Show the pick area again
+    const pick = document.querySelector('.photo-pick');
+    if (pick) pick.style.display = '';
+    // Reset file inputs
+    document.querySelectorAll('.file-overlay').forEach(inp => inp.value = '');
   },
 
-  /* --- Voice Step --- */
-  startRecording() {
-    if (this.isRecording) return;
+  goVoice() {
+    $('#photoStep').classList.add('hidden');
+    $('#voiceStep').classList.remove('hidden');
+    this.checkGenBtn();
+  },
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      document.getElementById('recordHint').textContent = '当前浏览器不支持语音，请使用下方文字输入';
-      document.getElementById('recordHint').classList.remove('hidden');
+  /* voice */
+  startMic() {
+    if (this.recognizing) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      $('#micHint').textContent = '当前浏览器不支持语音，请使用文字输入';
+      $('#micHint').classList.remove('hidden');
       return;
     }
-
-    this.recognition = new SpeechRecognition();
+    this.recognition = new SR();
     this.recognition.lang = 'zh-CN';
     this.recognition.interimResults = true;
     this.recognition.continuous = true;
 
     this.recognition.onresult = (e) => {
-      let transcript = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        transcript += e.results[i][0].transcript;
-      }
-      this.currentTranscript = transcript;
-      document.getElementById('transcriptDisplay').textContent = transcript;
-      document.getElementById('recordHint').classList.add('hidden');
-      this.updateGenerateButton();
+      let t = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+      this.transcript = t;
+      $('#transcriptBox').textContent = t;
+      $('#micHint').classList.add('hidden');
+      this.checkGenBtn();
     };
 
     this.recognition.onerror = (e) => {
-      const hint = document.getElementById('recordHint');
-      if (e.error === 'not-allowed') {
-        hint.innerHTML = '麦克风权限未开启<br><small>请在浏览器设置中允许麦克风权限，<br>或使用下方文字输入</small>';
-      } else if (e.error === 'no-speech') {
-        hint.textContent = '未检测到语音，请再试一次或使用文字输入';
-      } else {
-        hint.textContent = '语音识别失败，请使用下方文字输入';
-      }
-      hint.classList.remove('hidden');
-      this.isRecording = false;
-      this.updateRecordButton();
+      const h = $('#micHint');
+      if (e.error === 'not-allowed') h.innerHTML = '麦克风权限未开启<br><small>请在浏览器设置中允许，或使用文字输入</small>';
+      else if (e.error === 'no-speech') h.textContent = '未检测到语音，请再试或使用文字输入';
+      else h.textContent = '语音识别失败，请使用文字输入';
+      h.classList.remove('hidden');
+      this.recognizing = false;
+      this.updateMicBtn();
     };
 
     this.recognition.onend = () => {
-      this.isRecording = false;
-      this.updateRecordButton();
+      this.recognizing = false;
+      this.updateMicBtn();
     };
 
     try {
       this.recognition.start();
-      this.isRecording = true;
+      this.recognizing = true;
+      this.updateMicBtn();
     } catch (err) {
-      const hint = document.getElementById('recordHint');
-      hint.textContent = '语音启动失败，请使用下方文字输入';
-      hint.classList.remove('hidden');
-      this.isRecording = false;
-      this.updateRecordButton();
+      $('#micHint').textContent = '语音启动失败，请使用文字输入';
+      $('#micHint').classList.remove('hidden');
     }
-    this.updateRecordButton();
   },
 
-  stopRecording() {
-    if (!this.isRecording || !this.recognition) return;
+  stopMic() {
+    if (!this.recognizing || !this.recognition) return;
     this.recognition.stop();
-    this.isRecording = false;
-    this.updateRecordButton();
+    this.recognizing = false;
+    this.updateMicBtn();
   },
 
-  updateRecordButton() {
-    const btn = document.getElementById('recordBtn');
-    const icon = btn.querySelector('.record-icon');
-    if (this.isRecording) {
-      btn.classList.add('recording');
-      icon.textContent = '🎙️';
+  updateMicBtn() {
+    const btn = $('#recordBtn');
+    if (this.recognizing) {
+      btn.classList.add('on');
+      btn.querySelector('.mic-icon').textContent = '🎙️';
     } else {
-      btn.classList.remove('recording');
-      icon.textContent = '🎤';
+      btn.classList.remove('on');
+      btn.querySelector('.mic-icon').textContent = '🎤';
     }
   },
 
-  updateGenerateButton() {
-    const voice = this.currentTranscript.trim();
-    const manual = document.getElementById('manualTextInput').value.trim();
-    document.getElementById('generateBtn').disabled = !(voice || manual);
+  checkGenBtn() {
+    const v = this.transcript.trim();
+    const m = $('#textInput').value.trim();
+    $('#genBtn').disabled = !(v || m);
   },
 
-  goToStep(step) {
-    document.getElementById('stepPhoto').classList.add('hidden');
-    document.getElementById('stepVoice').classList.add('hidden');
-    document.getElementById('stepResult').classList.add('hidden');
+  /* generate */
+  async generate() {
+    const txt = [this.transcript.trim(), $('#textInput').value.trim()].filter(Boolean).join('，');
+    if (!txt) return;
 
-    if (step === 'voice') {
-      document.getElementById('stepVoice').classList.remove('hidden');
-    } else if (step === 'result') {
-      document.getElementById('stepResult').classList.remove('hidden');
-    }
-  },
-
-  /* --- Generate --- */
-  async generateJournal() {
-    const voice = this.currentTranscript.trim();
-    const manual = document.getElementById('manualTextInput').value.trim();
-    const combined = [voice, manual].filter(Boolean).join('，');
-    if (!combined) return;
-
-    this.goToStep('result');
-    document.getElementById('resultLoading').classList.remove('hidden');
-    document.getElementById('resultContent').classList.add('hidden');
-    document.getElementById('resultError').classList.add('hidden');
+    $('#photoStep').classList.add('hidden');
+    $('#voiceStep').classList.add('hidden');
+    $('#resultStep').classList.remove('hidden');
+    $('#loadingBox').classList.remove('hidden');
+    $('#resultBox').classList.add('hidden');
+    $('#errorBox').classList.add('hidden');
 
     try {
-      const base64 = this.currentPhoto ? this.currentPhoto.split(',')[1] : null;
-      const result = await this.api.generateJournal(base64, combined);
+      const b64 = this.photo ? this.photo.split(',')[1] : null;
+      const r = await this.api.generateJournal(b64, txt);
+      this.generated = r;
 
-      document.getElementById('resultLoading').classList.add('hidden');
-      document.getElementById('resultContent').classList.remove('hidden');
-
-      document.getElementById('resultTitle').textContent = result.title;
-      document.getElementById('resultJournal').textContent = result.journal;
-      document.getElementById('resultPoem').textContent = result.poem ? `「${result.poem}」` : '';
-      document.getElementById('resultMood').textContent = `${this.moodEmoji(result.mood)} ${result.mood}`;
-      document.getElementById('resultTags').innerHTML = (result.tags || [])
-        .map((t) => `<span class="tag">#${this.esc(t)}</span>`).join(' ');
-
-      this.generatedJournal = result;
+      $('#loadingBox').classList.add('hidden');
+      $('#resultBox').classList.remove('hidden');
+      $('#resTitle').textContent = r.title;
+      $('#resJournal').textContent = r.journal;
+      $('#resPoem').textContent = r.poem ? `「${r.poem}」` : '';
+      $('#resMood').textContent = `${this.moodIcon(r.mood)} ${r.mood}`;
+      $('#resTags').innerHTML = (r.tags||[]).map(t=>`<span class="tag">#${this.esc(t)}</span>`).join('');
     } catch (e) {
-      document.getElementById('resultLoading').classList.add('hidden');
-      document.getElementById('resultError').classList.remove('hidden');
-      document.getElementById('errorMessage').textContent = e.message;
+      $('#loadingBox').classList.add('hidden');
+      $('#errorBox').classList.remove('hidden');
+      $('#errMsg').textContent = e.message;
     }
   },
 
-  /* --- Save --- */
-  async saveJournal() {
-    if (!this.generatedJournal) return;
-
+  /* save */
+  async save() {
+    if (!this.generated) return;
     const entry = {
-      id: Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+      id: Date.now().toString(36)+Math.random().toString(36).substring(2,6),
       date: new Date().toISOString(),
-      photo: this.currentPhoto,
-      transcript: this.currentTranscript,
-      title: this.generatedJournal.title,
-      journal: this.generatedJournal.journal,
-      mood: this.generatedJournal.mood,
-      tags: this.generatedJournal.tags,
-      poem: this.generatedJournal.poem
+      photo: this.photo,
+      transcript: this.transcript,
+      title: this.generated.title,
+      journal: this.generated.journal,
+      mood: this.generated.mood,
+      tags: this.generated.tags,
+      poem: this.generated.poem
     };
-
-    try {
-      await Storage.saveEntry(entry);
-    } catch (e) {
-      alert(e.message);
-    }
-
-    this.closeNewEntry();
-    this.entries = await Storage.getEntries();
-    this.renderHome();
-
+    try { await Storage.saveEntry(entry); } catch (e) { alert(e.message); }
+    this.closeNew();
+    await this.renderList();
     setTimeout(() => {
-      const top = document.getElementById('entryList').firstElementChild;
-      if (top) top.scrollIntoView({ behavior: 'smooth' });
+      const top = $('#entryList').firstElementChild;
+      if (top) top.scrollIntoView({behavior:'smooth'});
     }, 300);
   },
 
-  /* ============ Detail ============ */
-  openDetail(index) {
-    const entry = this.entries[index];
-    if (!entry) return;
-
-    this.currentDetailIndex = index;
-    this.editPhotoData = null;
-    this.setDetailViewMode();
-    this.renderDetailContent(entry);
-    document.getElementById('detailModal').classList.add('active');
+  /* ===== detail ===== */
+  openDetail(i) {
+    const e = this.entries[i];
+    if (!e) return;
+    this.detailIdx = i;
+    this.editPhoto = null;
+    this.viewMode();
+    this.fillDetail(e);
+    $('#detailOverlay').classList.add('on');
   },
 
-  renderDetailContent(entry) {
-    const dp = document.getElementById('detailPhoto');
-    if (entry.photo) {
-      dp.style.backgroundImage = `url(${entry.photo})`;
-      dp.classList.remove('no-photo');
-    } else {
-      dp.style.backgroundImage = '';
-      dp.classList.add('no-photo');
-    }
-    document.getElementById('detailDate').textContent = this.formatDate(entry.date, true);
-    document.getElementById('detailMood').textContent = `${this.moodEmoji(entry.mood)} ${entry.mood}`;
-    document.getElementById('detailTitle').textContent = entry.title;
-    document.getElementById('detailJournal').textContent = entry.journal;
-    document.getElementById('detailPoem').textContent = entry.poem ? `「${entry.poem}」` : '';
-    document.getElementById('detailTranscript').textContent = entry.transcript;
-    document.getElementById('detailTags').innerHTML = (entry.tags || [])
-      .map((t) => `<span class="tag">#${this.esc(t)}</span>`).join(' ');
+  fillDetail(e) {
+    const dp = $('#detailPhoto');
+    if (e.photo) { dp.style.backgroundImage = `url(${e.photo})`; dp.classList.remove('no-img'); }
+    else { dp.style.backgroundImage = ''; dp.classList.add('no-img'); }
+    $('#detailDate').textContent = this.fmtDate(e.date, true);
+    $('#detailMood').textContent = `${this.moodIcon(e.mood)} ${e.mood}`;
+    $('#detailTitle').textContent = e.title;
+    $('#detailBody').textContent = e.journal;
+    $('#detailPoem').textContent = e.poem ? `「${e.poem}」` : '';
+    $('#detailTranscript').textContent = e.transcript;
+    $('#detailTags').innerHTML = (e.tags||[]).map(t=>`<span class="tag">#${this.esc(t)}</span>`).join('');
   },
 
-  setDetailViewMode() {
-    document.getElementById('detailTitle').classList.remove('hidden');
-    document.getElementById('detailJournal').classList.remove('hidden');
-    document.getElementById('editTitle').classList.add('hidden');
-    document.getElementById('editJournal').classList.add('hidden');
-    document.getElementById('editPhotoLabel').classList.add('hidden');
-    document.getElementById('detailActionsView').classList.remove('hidden');
-    document.getElementById('detailActionsEdit').classList.add('hidden');
+  viewMode() {
+    $$('#detailTitle,#detailBody').forEach(el=>el.classList.remove('hidden'));
+    $$('#editTitleInput,#editBodyInput,#editPhotoBtn').forEach(el=>el.classList.add('hidden'));
+    $('#viewActions').classList.remove('hidden');
+    $('#editActions').classList.add('hidden');
   },
 
-  enterEditMode() {
-    const entry = this.entries[this.currentDetailIndex];
-    if (!entry) return;
-
-    document.getElementById('detailTitle').classList.add('hidden');
-    document.getElementById('detailJournal').classList.add('hidden');
-    document.getElementById('editTitle').classList.remove('hidden');
-    document.getElementById('editJournal').classList.remove('hidden');
-    document.getElementById('editPhotoLabel').classList.remove('hidden');
-    document.getElementById('detailActionsView').classList.add('hidden');
-    document.getElementById('detailActionsEdit').classList.remove('hidden');
-
-    document.getElementById('editTitle').value = entry.title || '';
-    document.getElementById('editJournal').value = entry.journal || '';
-    this.editPhotoData = null;
+  editMode() {
+    const e = this.entries[this.detailIdx];
+    if (!e) return;
+    $$('#detailTitle,#detailBody').forEach(el=>el.classList.add('hidden'));
+    $$('#editTitleInput,#editBodyInput,#editPhotoBtn').forEach(el=>el.classList.remove('hidden'));
+    $('#viewActions').classList.add('hidden');
+    $('#editActions').classList.remove('hidden');
+    $('#editTitleInput').value = e.title || '';
+    $('#editBodyInput').value = e.journal || '';
   },
 
   cancelEdit() {
-    const entry = this.entries[this.currentDetailIndex];
-    if (!entry) return;
-    this.editPhotoData = null;
-    this.setDetailViewMode();
-    this.renderDetailContent(entry);
+    const e = this.entries[this.detailIdx];
+    if (!e) return;
+    this.editPhoto = null;
+    this.viewMode();
+    this.fillDetail(e);
   },
 
-  handleEditPhoto(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      this.editPhotoData = ev.target.result;
-      const dp = document.getElementById('detailPhoto');
-      dp.style.backgroundImage = `url(${this.editPhotoData})`;
-      dp.classList.remove('no-photo');
+  gotEditPhoto(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = (ev) => {
+      this.editPhoto = ev.target.result;
+      $('#detailPhoto').style.backgroundImage = `url(${this.editPhoto})`;
+      $('#detailPhoto').classList.remove('no-img');
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(f);
   },
 
   async saveEdit() {
-    const entry = this.entries[this.currentDetailIndex];
-    if (!entry) return;
-
-    entry.title = document.getElementById('editTitle').value.trim() || entry.title;
-    entry.journal = document.getElementById('editJournal').value.trim() || entry.journal;
-    if (this.editPhotoData) {
-      entry.photo = this.editPhotoData;
-    }
-
-    await Storage.saveEntry(entry);
+    const e = this.entries[this.detailIdx];
+    if (!e) return;
+    e.title = $('#editTitleInput').value.trim() || e.title;
+    e.journal = $('#editBodyInput').value.trim() || e.journal;
+    if (this.editPhoto) e.photo = this.editPhoto;
+    await Storage.saveEntry(e);
     this.entries = await Storage.getEntries();
-    this.editPhotoData = null;
-    this.setDetailViewMode();
-    this.renderDetailContent(entry);
-    this.renderHome();
+    this.editPhoto = null;
+    this.viewMode();
+    this.fillDetail(e);
+    await this.renderList();
   },
 
   closeDetail() {
-    document.getElementById('detailModal').classList.remove('active');
-    this.editPhotoData = null;
-    this.setDetailViewMode();
+    $('#detailOverlay').classList.remove('on');
+    this.editPhoto = null;
+    this.viewMode();
   },
 
   async deleteEntry() {
-    const entry = this.entries[this.currentDetailIndex];
-    if (!entry) return;
+    const e = this.entries[this.detailIdx];
+    if (!e) return;
     if (!confirm('确定删除这篇手账吗？')) return;
-    await Storage.deleteEntry(entry.id);
+    await Storage.deleteEntry(e.id);
     this.closeDetail();
-    await this.renderHome();
+    await this.renderList();
   },
 
-  /* ============ Settings ============ */
+  /* ===== settings ===== */
   async openSettings() {
-    const settings = await Storage.getSettings();
-    document.getElementById('providerSelect').value = settings.provider || 'zhipu';
-    document.getElementById('apiKeyInput').value = '';
-    document.getElementById('customKeySection').classList.add('hidden');
-    document.getElementById('useCustomKeyBtn').classList.remove('hidden');
-    document.getElementById('settingsOverlay').classList.add('active');
+    const s = await Storage.getSettings();
+    $('#providerSelect').value = s.provider || 'zhipu';
+    $('#apiKeyInput').value = '';
+    $('#customKeyBox').classList.add('hidden');
+    $('#showCustomKeyBtn').classList.remove('hidden');
+    $('#settingsOverlay').classList.add('on');
   },
 
-  showCustomKey() {
-    document.getElementById('customKeySection').classList.remove('hidden');
-    document.getElementById('useCustomKeyBtn').classList.add('hidden');
-  },
+  closeSettings() { $('#settingsOverlay').classList.remove('on'); },
 
-  async useDefaultKey() {
+  async resetKey() {
     await Storage.saveSettings({ provider: 'zhipu', apiKey: '' });
     this.api = new AIClient('zhipu', '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j');
-    document.getElementById('customKeySection').classList.add('hidden');
-    document.getElementById('useCustomKeyBtn').classList.remove('hidden');
-    document.getElementById('apiKeyInput').value = '';
+    $('#customKeyBox').classList.add('hidden');
+    $('#showCustomKeyBtn').classList.remove('hidden');
+    $('#apiKeyInput').value = '';
   },
 
-  closeSettings() {
-    document.getElementById('settingsOverlay').classList.remove('active');
-  },
-
-  async saveSettings() {
-    const provider = document.getElementById('providerSelect').value;
-    const apiKey = document.getElementById('apiKeyInput').value.trim();
-    if (!apiKey) { alert('请输入 API Key'); return; }
-
-    const btn = document.getElementById('saveSettingsBtn');
-    btn.disabled = true;
-    btn.textContent = '验证中...';
-
-    try {
-      await AIClient.testConnection(provider, apiKey);
-    } catch (e) {
-      alert('API Key 验证失败: ' + e.message);
-      btn.disabled = false;
-      btn.textContent = '保存自定义 Key';
-      return;
-    }
-
-    await Storage.saveSettings({ provider, apiKey });
-    this.api = new AIClient(provider, apiKey);
-    btn.disabled = false;
-    btn.textContent = '保存自定义 Key';
+  async saveKey() {
+    const provider = $('#providerSelect').value;
+    const key = $('#apiKeyInput').value.trim();
+    if (!key) { alert('请输入 API Key'); return; }
+    const btn = $('#saveKeyBtn');
+    btn.disabled = true; btn.textContent = '验证中...';
+    try { await AIClient.testConnection(provider, key); }
+    catch (e) { alert('API Key 验证失败: '+e.message); btn.disabled=false; btn.textContent='保存自定义 Key'; return; }
+    await Storage.saveSettings({ provider, apiKey: key });
+    this.api = new AIClient(provider, key);
+    btn.disabled = false; btn.textContent = '保存自定义 Key';
     this.closeSettings();
   },
 
-  /* ============ Utilities ============ */
-  moodEmoji(mood) {
-    const map = { '开心': '😊', '平静': '😌', '感动': '🥹', '兴奋': '🤩', '治愈': '🌿', '疲惫': '😮‍💨', '感恩': '🙏' };
-    return map[mood] || '📝';
+  /* ===== util ===== */
+  moodIcon(m) {
+    const map = {'开心':'😊','平静':'😌','感动':'🥹','兴奋':'🤩','治愈':'🌿','疲惫':'😮‍💨','感恩':'🙏'};
+    return map[m] || '📝';
   },
 
-  formatDate(iso, full = false) {
+  fmtDate(iso, full) {
     const d = new Date(iso);
     const opts = full
-      ? { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' }
-      : { month: 'numeric', day: 'numeric' };
+      ? {year:'numeric',month:'long',day:'numeric',weekday:'long',hour:'2-digit',minute:'2-digit'}
+      : {month:'numeric',day:'numeric'};
     return d.toLocaleDateString('zh-CN', opts);
   },
 
-  esc(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+  esc(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
   }
 };
+
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
 
 document.addEventListener('DOMContentLoaded', () => App.init());
 
