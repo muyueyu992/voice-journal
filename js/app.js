@@ -41,7 +41,6 @@ const App = {
 
     // New entry flow
     document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
-    document.getElementById('photoBtn').addEventListener('click', () => document.getElementById('photoInput').click());
     document.getElementById('photoInput').addEventListener('change', (e) => this.handlePhoto(e));
     document.getElementById('retakePhotoBtn').addEventListener('click', () => this.retakePhoto());
     document.getElementById('usePhotoBtn').addEventListener('click', () => this.goToStep('voice'));
