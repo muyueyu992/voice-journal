@@ -3,15 +3,13 @@
    支持: 智谱 GLM / Gemini / 通义千问
    ============================================ */
 
-const JOURNAL_PROMPT_WITH_PHOTO = `你是手帐助手。用户说："{TRANSCRIPT}"，并附了照片。
-请把用户的话润色成手帐文案（最多比原话多15字），保持口语风格，不要写成散文。
-只输出JSON，不要任何解释：
-{"title":"手帐标题(6字内)","journal":"润色后的手帐文字","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签"],"poem":"一句小诗(5字内)"}`;
+const JOURNAL_PROMPT_WITH_PHOTO = `根据用户原话和照片，生成手帐。原话："{TRANSCRIPT}"
+要求：保持原话的口语风格，微调通顺即可，最多新增15字。输出纯JSON对象：
+{"title":"标题≤6字","journal":"润色文字","mood":"开心|平静|感动|兴奋|治愈|疲惫|感恩","tags":["标签1","标签2"],"poem":"短诗≤5字"}`;
 
-const JOURNAL_PROMPT_TEXT_ONLY = `你是手帐助手。用户说："{TRANSCRIPT}"。
-请把用户的话润色成手帐文案（最多比原话多15字），保持口语风格，不要写成散文。
-只输出JSON，不要任何解释：
-{"title":"手帐标题(6字内)","journal":"润色后的手帐文字","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签"],"poem":"一句小诗(5字内)"}`;
+const JOURNAL_PROMPT_TEXT_ONLY = `根据用户原话生成手帐。原话："{TRANSCRIPT}"
+要求：保持原话的口语风格，微调通顺即可，最多新增15字。输出纯JSON对象：
+{"title":"标题≤6字","journal":"润色文字","mood":"开心|平静|感动|兴奋|治愈|疲惫|感恩","tags":["标签1","标签2"],"poem":"短诗≤5字"}`;
 
 function buildZhipuContent(imageBase64, transcript) {
   const t = transcript || '（用户没有说话）';
@@ -36,10 +34,12 @@ const PROVIDERS = {
     name: '智谱 GLM-4V',
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     buildRequest(imageBase64, transcript) {
+      const hasImage = !!imageBase64;
       return {
-        model: 'glm-4v-flash',
+        model: hasImage ? 'glm-4v-flash' : 'glm-4-flash',
         messages: [{ role: 'user', content: buildZhipuContent(imageBase64, transcript) }],
-        temperature: 0.9, max_tokens: 1024
+        temperature: 0.9, max_tokens: 1024,
+        response_format: { type: 'json_object' }
       };
     },
     parseResponse(data) {
@@ -111,13 +111,14 @@ class AIClient {
   }
 
   parseJournalJSON(text) {
-    try {
-      const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(cleaned);
-    } catch (e) {
-      try { return JSON.parse(text.trim()); } catch (e2) {
-        throw new Error('AI 返回格式异常，请点"换一个"重试');
-      }
+    // Extract JSON from possibly mixed Chinese+JSON response
+    const m = text.match(/\{[\s\S]*\}/);
+    if (m) {
+      try { return JSON.parse(m[0]); } catch (e) {}
+    }
+    const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    try { return JSON.parse(cleaned); } catch (e) {
+      throw new Error('AI 返回格式异常，请点"换一个"重试');
     }
   }
 
