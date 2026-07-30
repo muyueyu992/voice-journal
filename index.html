@@ -20,7 +20,7 @@
         <div class="header-brand">
           <span class="brand-icon">📔</span>
           <div>
-            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5n</span></h1>
+            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5o</span></h1>
             <span id="entryCount" class="subtitle">0 篇手账</span>
           </div>
         </div>
@@ -57,22 +57,15 @@
           <div id="photoPlaceholder" class="photo-placeholder">
             <span class="placeholder-icon">📷</span>
             <p>拍一张照片（可选）</p>
-            <div class="photo-actions">
-              <button id="cameraBtn" class="btn btn-primary">📷 拍照</button>
-              <button id="galleryBtn" class="btn btn-outline">🖼️ 相册</button>
+            <div class="file-btn-wrap">
+              <span class="file-btn-label file-btn-camera">📷 拍照</span>
+              <input type="file" accept="image/*" capture="environment" class="file-btn-overlay" onchange="App.handlePhoto(event)">
             </div>
-            <p class="paste-hint">或从相册复制照片后，在此 <a href="javascript:void(0)" id="pasteHintBtn">点击粘贴</a></p>
-            <input type="file" id="photoInput" accept="image/*" class="hidden">
+            <div class="file-btn-wrap">
+              <span class="file-btn-label file-btn-gallery">🖼️ 从相册选择</span>
+              <input type="file" accept="image/*" class="file-btn-overlay" onchange="App.handlePhoto(event)">
+            </div>
             <button id="skipPhotoBtn" class="btn btn-outline skip-btn">跳过，直接记录文字</button>
-          </div>
-          <!-- Camera live view -->
-          <div id="cameraView" class="camera-view hidden">
-            <video id="cameraVideo" autoplay playsinline></video>
-            <div class="camera-controls">
-              <button id="cancelCameraBtn" class="btn btn-outline">取消</button>
-              <button id="captureBtn" class="capture-btn">📸</button>
-              <div class="camera-spacer"></div>
-            </div>
           </div>
           <div id="photoPreview" class="photo-preview hidden">
             <img id="photoPreviewImg" src="" alt="预览">
