@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>声音手账</title>
-  <link rel="stylesheet" href="css/style.css?v=6">
+  <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
   <div id="app">
@@ -53,15 +53,21 @@
           <div class="photo-pick">
             <span class="big-icon">📷</span>
             <p>拍一张照片（可选）</p>
-            <div class="file-wrap">
-              <span class="file-label file-label-primary">📷 拍照</span>
-              <input type="file" accept="image/*" capture="environment" class="file-overlay" onchange="App.gotPhoto(event)">
-            </div>
+            <button id="cameraBtn" class="btn-primary btn-block" style="max-width:280px;margin:12px auto;">📷 拍照</button>
             <div class="file-wrap">
               <span class="file-label file-label-outline">🖼️ 从相册选择</span>
               <input type="file" accept="image/*" class="file-overlay" onchange="App.gotPhoto(event)">
             </div>
             <button id="skipPhotoBtn" class="btn-text">跳过，直接记录文字</button>
+          </div>
+          <!-- Camera viewfinder -->
+          <div id="cameraView" class="camera-wrap hidden">
+            <video id="camVideo" autoplay playsinline></video>
+            <div class="camera-actions">
+              <button id="camCancelBtn" class="btn-outline">取消</button>
+              <button id="camSnapBtn" class="snap-btn">📸</button>
+              <span class="cam-spacer"></span>
+            </div>
           </div>
           <div id="photoPreviewBox" class="photo-preview-box hidden">
             <img id="previewImg" src="" alt="">
@@ -199,8 +205,8 @@
     </div>
   </div>
 
-  <script src="js/storage.js?v=6"></script>
-  <script src="js/ai.js?v=6"></script>
-  <script src="js/app.js?v=6"></script>
+  <script src="js/storage.js?v=7"></script>
+  <script src="js/ai.js?v=7"></script>
+  <script src="js/app.js?v=7"></script>
 </body>
 </html>
