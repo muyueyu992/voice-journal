@@ -11,6 +11,7 @@ const App = {
   isRecording: false,
   currentDetailIndex: -1,
   editPhotoData: null,
+  photoSelecting: false,
 
   /* ============ Init ============ */
   async init() {
@@ -144,8 +145,11 @@ const App = {
 
   /* --- Photo Step --- */
   handlePhoto(e) {
+    // Prevent double-trigger on file picker dismiss
+    if (this.photoSelecting) { e.target.value = ''; return; }
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) { this.photoSelecting = false; return; }
+    this.photoSelecting = true;
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -155,9 +159,10 @@ const App = {
       document.getElementById('photoThumbWrapper').classList.remove('hidden');
       document.getElementById('photoPreview').classList.remove('hidden');
       document.getElementById('photoPlaceholder').classList.add('hidden');
+      setTimeout(() => { this.photoSelecting = false; }, 500);
     };
+    reader.onerror = () => { this.photoSelecting = false; };
     reader.readAsDataURL(file);
-    // Reset input to allow re-selecting same file, and prevent double-trigger
     e.target.value = '';
   },
 
