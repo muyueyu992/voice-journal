@@ -29,6 +29,9 @@ const App = {
   bind() {
     $('#fab').addEventListener('click', () => this.openNew());
     $('#closeNewBtn').addEventListener('click', () => this.closeNew());
+    $('#cameraBtn').addEventListener('click', () => this.openCamera());
+    $('#camSnapBtn').addEventListener('click', () => this.snapPhoto());
+    $('#camCancelBtn').addEventListener('click', () => this.closeCamera());
     $('#skipPhotoBtn').addEventListener('click', () => this.skipPhoto());
     $('#retakeBtn').addEventListener('click', () => this.retake());
     $('#usePhotoBtn').addEventListener('click', () => this.goVoice());
@@ -106,16 +109,19 @@ const App = {
   },
 
   closeNew() {
+    this.closeCamera();
     this.stopMic();
     $('#newOverlay').classList.remove('on');
     this.resetNew();
   },
 
   resetNew() {
+    this.closeCamera();
     this.photo = null;
     this.transcript = '';
     this.generated = null;
     this.stopMic();
+    $('.photo-pick').style.display = '';
     $('#photoStep').classList.remove('hidden');
     $('#voiceStep').classList.add('hidden');
     $('#resultStep').classList.add('hidden');
@@ -134,29 +140,66 @@ const App = {
     const r = new FileReader();
     r.onload = (ev) => {
       this.photo = ev.target.result;
-      $('#previewImg').src = this.photo;
-      $('#miniPhotoImg').src = this.photo;
-      $('#miniPhoto').classList.remove('hidden');
-      $('#photoPreviewBox').classList.remove('hidden');
-      e.target.closest('.photo-pick').style.display = 'none';
+      $('.photo-pick').style.display = 'none';
+      this.showPreview();
     };
     r.readAsDataURL(f);
     e.target.value = '';
   },
 
   skipPhoto() {
+    this.closeCamera();
     this.photo = null;
     $('#miniPhoto').classList.add('hidden');
     this.goVoice();
   },
 
+  async openCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      this._camStream = stream;
+      $('#camVideo').srcObject = stream;
+      $('.photo-pick').style.display = 'none';
+      $('#cameraView').classList.remove('hidden');
+    } catch (e) {
+      alert('无法打开相机: ' + e.message);
+    }
+  },
+
+  snapPhoto() {
+    const video = $('#camVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1920;
+    canvas.height = video.videoHeight || 1080;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    this.photo = canvas.toDataURL('image/jpeg', 0.85);
+    this.closeCamera();
+    this.showPreview();
+  },
+
+  closeCamera() {
+    if (this._camStream) {
+      this._camStream.getTracks().forEach(t => t.stop());
+      this._camStream = null;
+    }
+    $('#cameraView').classList.add('hidden');
+  },
+
+  showPreview() {
+    $('#previewImg').src = this.photo;
+    $('#miniPhotoImg').src = this.photo;
+    $('#miniPhoto').classList.remove('hidden');
+    $('#photoPreviewBox').classList.remove('hidden');
+  },
+
   retake() {
+    this.closeCamera();
     this.photo = null;
     $('#photoPreviewBox').classList.add('hidden');
-    // Show the pick area again
-    const pick = document.querySelector('.photo-pick');
-    if (pick) pick.style.display = '';
-    // Reset file inputs
+    $('.photo-pick').style.display = '';
     document.querySelectorAll('.file-overlay').forEach(inp => inp.value = '');
   },
 
