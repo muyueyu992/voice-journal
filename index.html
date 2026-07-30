@@ -10,202 +10,197 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>声音手账</title>
-  <link rel="stylesheet" href="css/style.css?v=5j">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
   <div id="app">
-    <!-- ========== Header ========== -->
-    <header class="app-header">
-      <div class="header-content">
-        <div class="header-brand">
-          <span class="brand-icon">📔</span>
-          <div>
-            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5o</span></h1>
-            <span id="entryCount" class="subtitle">0 篇手账</span>
-          </div>
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">📔</span>
+        <div>
+          <h1>声音手账</h1>
+          <span id="countBadge" class="badge">0 篇</span>
         </div>
-        <button id="settingsBtn" class="icon-btn" title="设置">⚙️</button>
       </div>
+      <button id="settingsBtn" class="icon-btn">⚙️</button>
     </header>
 
-    <!-- ========== Entry List ========== -->
-    <main class="main-content">
-      <div id="emptyState" class="empty-state">
+    <!-- Entry List -->
+    <main id="mainContent" class="main">
+      <div id="emptyHint" class="empty">
         <div class="empty-icon">📖</div>
         <h2>开始你的第一页手账</h2>
         <p>拍一张照片，说一段话<br>AI 帮你写成温暖的手账</p>
       </div>
-      <div id="entryList" class="entry-list"></div>
+      <div id="entryList"></div>
     </main>
 
-    <!-- ========== FAB ========== -->
-    <button id="fabBtn" class="fab" title="新建手账">
-      <span>+</span>
-    </button>
+    <!-- FAB -->
+    <button id="fab" class="fab">+</button>
 
-    <!-- ========== New Entry Overlay ========== -->
-    <div id="newEntryOverlay" class="overlay">
-      <div class="overlay-header">
-        <button id="closeNewEntryBtn" class="icon-btn">✕</button>
-        <span class="overlay-title">新建手账</span>
-        <div class="header-spacer"></div>
+    <!-- ====== New Entry Overlay ====== -->
+    <div id="newOverlay" class="overlay">
+      <div class="overlay-top">
+        <button id="closeNewBtn" class="icon-btn">✕</button>
+        <span>新建手账</span>
+        <span class="spacer"></span>
       </div>
+      <div class="overlay-scroll">
 
-      <div class="overlay-body">
-        <!-- Step 1: Photo -->
-        <div id="stepPhoto" class="step">
-          <div id="photoPlaceholder" class="photo-placeholder">
-            <span class="placeholder-icon">📷</span>
+        <!-- photo step -->
+        <div id="photoStep" class="step-content">
+          <div class="photo-pick">
+            <span class="big-icon">📷</span>
             <p>拍一张照片（可选）</p>
-            <div class="file-btn-wrap">
-              <span class="file-btn-label file-btn-camera">📷 拍照</span>
-              <input type="file" accept="image/*" capture="environment" class="file-btn-overlay" onchange="App.handlePhoto(event)">
+            <div class="file-wrap">
+              <span class="file-label file-label-primary">📷 拍照</span>
+              <input type="file" accept="image/*" capture="environment" class="file-overlay" onchange="App.gotPhoto(event)">
             </div>
-            <div class="file-btn-wrap">
-              <span class="file-btn-label file-btn-gallery">🖼️ 从相册选择</span>
-              <input type="file" accept="image/*" class="file-btn-overlay" onchange="App.handlePhoto(event)">
+            <div class="file-wrap">
+              <span class="file-label file-label-outline">🖼️ 从相册选择</span>
+              <input type="file" accept="image/*" class="file-overlay" onchange="App.gotPhoto(event)">
             </div>
-            <button id="skipPhotoBtn" class="btn btn-outline skip-btn">跳过，直接记录文字</button>
+            <button id="skipPhotoBtn" class="btn-text">跳过，直接记录文字</button>
           </div>
-          <div id="photoPreview" class="photo-preview hidden">
-            <img id="photoPreviewImg" src="" alt="预览">
-            <div class="photo-preview-actions">
-              <button id="retakePhotoBtn" class="btn btn-outline">重拍</button>
-              <button id="usePhotoBtn" class="btn btn-primary">使用这张照片</button>
+          <div id="photoPreviewBox" class="photo-preview-box hidden">
+            <img id="previewImg" src="" alt="">
+            <div class="row-btns">
+              <button id="retakeBtn" class="btn-outline flex-1">重拍</button>
+              <button id="usePhotoBtn" class="btn-primary flex-1">使用这张照片</button>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: Record -->
-        <div id="stepVoice" class="step hidden">
-          <div id="photoThumbWrapper" class="photo-thumb hidden">
-            <img id="photoThumb" src="" alt="">
+        <!-- voice step -->
+        <div id="voiceStep" class="step-content hidden">
+          <div id="miniPhoto" class="mini-photo hidden">
+            <img id="miniPhotoImg" src="" alt="">
           </div>
           <div class="voice-area">
-            <p class="voice-prompt">按住说话，或直接输入文字</p>
-            <button id="recordBtn" class="record-btn">
-              <span class="record-icon">🎤</span>
-              <span class="record-label">按住说话</span>
+            <p class="hint">按住说话，或直接输入文字</p>
+            <button id="recordBtn" class="mic-btn">
+              <span class="mic-icon">🎤</span>
+              <span class="mic-text">按住说话</span>
             </button>
-            <div id="transcriptDisplay" class="transcript-box"></div>
-            <p id="recordHint" class="record-hint">说话内容会实时显示在上方</p>
+            <div id="transcriptBox" class="transcript"></div>
+            <p id="micHint" class="hint-small">说话内容会实时显示在上方</p>
           </div>
-          <div class="voice-fallback">
-            <p class="fallback-label">📝 或直接输入文字：</p>
-            <textarea id="manualTextInput" class="manual-input" placeholder="写下你想说的话..."></textarea>
+          <div class="text-fallback">
+            <p>📝 或直接输入文字：</p>
+            <textarea id="textInput" class="text-input" placeholder="写下你想说的话..."></textarea>
           </div>
-          <button id="generateBtn" class="btn btn-primary btn-full" disabled>
-            ✨ 生成手账
-          </button>
+          <button id="genBtn" class="btn-primary btn-block" disabled>✨ 生成手账</button>
         </div>
 
-        <!-- Step 3: Result -->
-        <div id="stepResult" class="step hidden">
-          <div id="resultLoading" class="result-loading">
-            <div class="loading-animation">
-              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-            </div>
+        <!-- result step -->
+        <div id="resultStep" class="step-content hidden">
+          <div id="loadingBox" class="center-box">
+            <div class="dots"><span></span><span></span><span></span></div>
             <p>AI 正在为你书写...</p>
           </div>
-          <div id="resultError" class="result-error hidden">
-            <span class="error-icon">😞</span>
-            <p id="errorMessage"></p>
-            <button id="retryGenerateBtn" class="btn btn-outline">重试</button>
+          <div id="errorBox" class="center-box hidden">
+            <p class="err-icon">😞</p>
+            <p id="errMsg" class="err-text"></p>
+            <button id="retryBtn" class="btn-outline">重试</button>
           </div>
-          <div id="resultContent" class="result-content hidden">
-            <div class="journal-paper">
-              <h2 id="resultTitle" class="journal-title"></h2>
-              <p id="resultPoem" class="journal-poem"></p>
-              <p id="resultJournal" class="journal-text"></p>
-              <div class="journal-meta">
-                <span id="resultMood"></span>
-                <div id="resultTags" class="journal-tags"></div>
+          <div id="resultBox" class="hidden">
+            <div class="paper">
+              <h2 id="resTitle" class="paper-title"></h2>
+              <p id="resPoem" class="paper-poem"></p>
+              <p id="resJournal" class="paper-body"></p>
+              <div class="paper-meta">
+                <span id="resMood"></span>
+                <div id="resTags" class="tags"></div>
               </div>
             </div>
-            <div class="result-actions">
-              <button id="discardJournalBtn" class="btn btn-outline">丢弃</button>
-              <button id="regenerateBtn" class="btn btn-outline">🔄 换一个</button>
-              <button id="saveJournalBtn" class="btn btn-primary">💾 保存</button>
+            <div class="row-btns">
+              <button id="discardBtn" class="btn-outline">丢弃</button>
+              <button id="regenBtn" class="btn-outline">🔄 换一个</button>
+              <button id="saveBtn" class="btn-primary flex-2">💾 保存</button>
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
-    <!-- ========== Detail Modal ========== -->
-    <div id="detailModal" class="overlay detail-overlay">
-      <div class="overlay-header">
+    <!-- ====== Detail Overlay ====== -->
+    <div id="detailOverlay" class="overlay">
+      <div class="overlay-top">
         <button id="closeDetailBtn" class="icon-btn">✕</button>
-        <span class="overlay-title">手账详情</span>
-        <div class="header-spacer"></div>
+        <span>手账详情</span>
+        <span class="spacer"></span>
       </div>
-      <div class="detail-body">
+      <div class="overlay-scroll">
         <div id="detailPhoto" class="detail-photo">
-          <label id="editPhotoLabel" class="edit-photo-label hidden">
-            <input type="file" id="editPhotoInput" accept="image/*" hidden>
+          <label id="editPhotoBtn" class="edit-photo-btn hidden">
+            <input type="file" id="editPhotoInput" accept="image/*" hidden onchange="App.editPhoto(event)">
             📷 更换照片
           </label>
         </div>
-        <div class="detail-paper">
+        <div class="detail-card">
           <div class="detail-meta">
             <span id="detailDate"></span>
             <span id="detailMood"></span>
           </div>
           <h2 id="detailTitle" class="detail-title"></h2>
-          <input id="editTitle" class="edit-input hidden" placeholder="手账标题">
+          <input id="editTitleInput" class="edit-input hidden" placeholder="标题">
           <p id="detailPoem" class="detail-poem"></p>
-          <p id="detailJournal" class="detail-text"></p>
-          <textarea id="editJournal" class="edit-textarea hidden" placeholder="手账正文"></textarea>
-          <div id="detailTags" class="detail-tags"></div>
+          <p id="detailBody" class="detail-body"></p>
+          <textarea id="editBodyInput" class="edit-textarea hidden" placeholder="正文"></textarea>
+          <div id="detailTags" class="tags"></div>
           <div class="detail-transcript">
             <h4>🎙️ 你的原话</h4>
             <p id="detailTranscript"></p>
           </div>
-          <div id="detailActionsView" class="detail-actions">
-            <button id="editEntryBtn" class="btn btn-outline btn-full">✏️ 编辑</button>
-            <button id="deleteEntryBtn" class="btn btn-danger btn-full">🗑️ 删除</button>
+          <div id="viewActions" class="row-btns">
+            <button id="editBtn" class="btn-outline flex-1">✏️ 编辑</button>
+            <button id="deleteBtn" class="btn-danger flex-1">🗑️ 删除</button>
           </div>
-          <div id="detailActionsEdit" class="detail-actions hidden">
-            <button id="cancelEditBtn" class="btn btn-outline">取消</button>
-            <button id="saveEditBtn" class="btn btn-primary">💾 保存修改</button>
+          <div id="editActions" class="row-btns hidden">
+            <button id="cancelEditBtn" class="btn-outline flex-1">取消</button>
+            <button id="saveEditBtn" class="btn-primary flex-1">💾 保存修改</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ========== Settings Overlay ========== -->
+    <!-- ====== Settings Overlay ====== -->
     <div id="settingsOverlay" class="overlay">
-      <div class="overlay-header">
+      <div class="overlay-top">
         <button id="closeSettingsBtn" class="icon-btn">✕</button>
-        <span class="overlay-title">设置</span>
-        <div class="header-spacer"></div>
+        <span>设置</span>
+        <span class="spacer"></span>
       </div>
-      <div class="settings-body">
-        <div class="settings-section">
-          <label for="providerSelect">AI 服务商</label>
-          <select id="providerSelect" class="settings-select">
-            <option value="zhipu">智谱 GLM-4V（推荐，国内可用）</option>
-            <option value="qwen">通义千问 Qwen-VL</option>
-            <option value="gemini">Gemini 1.5 Flash（需翻墙）</option>
-          </select>
-        </div>
-        <p class="settings-hint" style="color:#8b7355;text-align:center;padding:12px;background:#fef9f0;border-radius:8px;">默认 AI 已配置好，直接使用即可<br>如需用自己的 Key，点下方按钮设置</p>
-        <button id="useCustomKeyBtn" class="btn btn-outline btn-full" style="font-size:13px;">使用自己的 API Key</button>
-        <div id="customKeySection" class="hidden">
-          <div class="settings-section">
-            <label for="apiKeyInput">API Key</label>
-            <input type="password" id="apiKeyInput" placeholder="输入你的 API Key">
+      <div class="overlay-scroll">
+        <div class="settings-body">
+          <div class="setting-row">
+            <label>AI 服务商</label>
+            <select id="providerSelect" class="setting-select">
+              <option value="zhipu">智谱 GLM（推荐）</option>
+              <option value="qwen">通义千问 Qwen-VL</option>
+              <option value="gemini">Gemini 1.5 Flash</option>
+            </select>
           </div>
-          <button id="saveSettingsBtn" class="btn btn-primary btn-full">保存自定义 Key</button>
-          <button id="useDefaultKeyBtn" class="btn btn-outline btn-full" style="font-size:13px;">恢复默认 Key</button>
+          <p class="info-box">默认 AI 已配置好，直接使用即可。<br>如需用自己的 Key，点下方按钮设置。</p>
+          <button id="showCustomKeyBtn" class="btn-outline btn-block">使用自己的 API Key</button>
+          <div id="customKeyBox" class="hidden">
+            <div class="setting-row">
+              <label>API Key</label>
+              <input type="password" id="apiKeyInput" class="setting-input" placeholder="输入你的 API Key">
+            </div>
+            <button id="saveKeyBtn" class="btn-primary btn-block">保存自定义 Key</button>
+            <button id="resetKeyBtn" class="btn-text">恢复默认 Key</button>
+          </div>
+          <p class="privacy">数据仅保存在手机本地，不上传任何服务器</p>
         </div>
-        <p class="privacy-note">数据仅保存在手机本地，不上传任何服务器</p>
       </div>
     </div>
   </div>
 
-  <script src="js/storage.js?v=5j"></script>
-  <script src="js/ai.js?v=5j"></script>
-  <script src="js/app.js?v=5j"></script>
+  <script src="js/storage.js?v=6"></script>
+  <script src="js/ai.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>
