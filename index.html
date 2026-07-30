@@ -20,7 +20,7 @@
         <div class="header-brand">
           <span class="brand-icon">📔</span>
           <div>
-            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5k</span></h1>
+            <h1>声音手账 <span style="font-size:10px;color:#c4a882;font-weight:normal;">v5l</span></h1>
             <span id="entryCount" class="subtitle">0 篇手账</span>
           </div>
         </div>
@@ -57,8 +57,17 @@
           <div id="photoPlaceholder" class="photo-placeholder">
             <span class="placeholder-icon">📷</span>
             <p>拍一张照片（可选）</p>
-            <input type="file" id="photoInput" accept="image/*" capture="environment" class="photo-file-input">
+            <div class="photo-actions">
+              <button id="cameraBtn" class="btn btn-primary">📷 拍照</button>
+              <button id="galleryBtn" class="btn btn-outline">🖼️ 从相册选择</button>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" class="hidden">
             <button id="skipPhotoBtn" class="btn btn-outline skip-btn">跳过，直接记录文字</button>
+          </div>
+          <!-- Camera viewfinder -->
+          <div id="cameraView" class="camera-view hidden">
+            <video id="cameraVideo" autoplay playsinline></video>
+            <button id="captureBtn" class="capture-btn">📸</button>
           </div>
           <div id="photoPreview" class="photo-preview hidden">
             <img id="photoPreviewImg" src="" alt="预览">
