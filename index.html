@@ -183,12 +183,16 @@
             <option value="gemini">Gemini 1.5 Flash（需翻墙）</option>
           </select>
         </div>
-        <div class="settings-section">
-          <label for="apiKeyInput">API Key</label>
-          <input type="password" id="apiKeyInput" placeholder="输入 API Key">
-          <p id="settingsHint" class="settings-hint"></p>
+        <p class="settings-hint" style="color:#8b7355;text-align:center;padding:12px;background:#fef9f0;border-radius:8px;">默认 AI 已配置好，直接使用即可<br>如需用自己的 Key，点下方按钮设置</p>
+        <button id="useCustomKeyBtn" class="btn btn-outline btn-full" style="font-size:13px;">使用自己的 API Key</button>
+        <div id="customKeySection" class="hidden">
+          <div class="settings-section">
+            <label for="apiKeyInput">API Key</label>
+            <input type="password" id="apiKeyInput" placeholder="输入你的 API Key">
+          </div>
+          <button id="saveSettingsBtn" class="btn btn-primary btn-full">保存自定义 Key</button>
+          <button id="useDefaultKeyBtn" class="btn btn-outline btn-full" style="font-size:13px;">恢复默认 Key</button>
         </div>
-        <button id="saveSettingsBtn" class="btn btn-primary btn-full">保存</button>
         <p class="privacy-note">数据仅保存在手机本地，不上传任何服务器</p>
       </div>
     </div>
