@@ -105,6 +105,8 @@ body {
   font-family: var(--font-sans);
   cursor: pointer;
   transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-appearance: none;
 }
 .filter-btn.active {
   background: var(--accent);
