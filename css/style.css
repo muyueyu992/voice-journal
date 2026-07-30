@@ -88,6 +88,30 @@ body {
   padding-bottom: 90px;
 }
 
+/* ====== Filter Bar ====== */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.filter-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: 1px solid var(--warm-beige);
+  border-radius: var(--radius-xs);
+  background: var(--paper);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
 /* ====== Empty State ====== */
 .empty-state {
   display: flex;
