@@ -1,5 +1,5 @@
 /* ============================================
-   澹伴煶鎵嬭处 Voice Journal - Main App
+   声音手账 Voice Journal - Main App
    ============================================ */
 
 const App = {
@@ -25,7 +25,8 @@ const App = {
   },
 
   checkSpeechSupport() {
-    // Web Speech API 鏀寔妫€娴嬶紝璇煶鎸夐挳濮嬬粓鏄剧ず锛屾枃瀛楄緭鍏ヤ綔涓哄閫?  },
+    // Web Speech API 支持检测，语音按钮始终显示，文字输入作为备选
+  },
 
   /* ============ Event Binding ============ */
   bindEvents() {
@@ -77,7 +78,7 @@ const App = {
     const entryCount = document.getElementById('entryCount');
 
     this.entries = await Storage.getEntries();
-    entryCount.textContent = `${this.entries.length} 绡囨墜璐;
+    entryCount.textContent = `${this.entries.length} 篇手账`;
 
     if (this.entries.length === 0) {
       emptyState.classList.remove('hidden');
@@ -96,7 +97,7 @@ const App = {
           </div>
           <h3 class="card-title">${this.esc(entry.title)}</h3>
           <p class="card-preview">${this.esc(entry.journal).substring(0, 60)}...</p>
-          ${entry.poem ? `<p class="card-poem">銆?{this.esc(entry.poem)}銆?/p>` : ''}
+          ${entry.poem ? `<p class="card-poem">「${this.esc(entry.poem)}」</p>` : ''}
           <div class="card-tags">
             ${(entry.tags || []).map((t) => `<span class="tag">#${this.esc(t)}</span>`).join(' ')}
           </div>
@@ -104,7 +105,7 @@ const App = {
       </div>
     `).join('');
 
-    // Card click 鈫?detail
+    // Card click → detail
     container.querySelectorAll('.entry-card').forEach((card) => {
       card.addEventListener('click', () => {
         const idx = parseInt(card.dataset.index);
@@ -183,7 +184,7 @@ const App = {
 
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      document.getElementById('recordHint').textContent = '褰撳墠娴忚鍣ㄤ笉鏀寔璇煶锛岃浣跨敤涓嬫柟鏂囧瓧杈撳叆';
+      document.getElementById('recordHint').textContent = '当前浏览器不支持语音，请使用下方文字输入';
       document.getElementById('recordHint').classList.remove('hidden');
       return;
     }
@@ -207,11 +208,11 @@ const App = {
     this.recognition.onerror = (e) => {
       const hint = document.getElementById('recordHint');
       if (e.error === 'not-allowed') {
-        hint.innerHTML = '楹﹀厠椋庢潈闄愭湭寮€鍚?br><small>璇峰湪娴忚鍣ㄨ缃腑鍏佽楹﹀厠椋庢潈闄愶紝<br>鎴栦娇鐢ㄤ笅鏂规枃瀛楄緭鍏?/small>';
+        hint.innerHTML = '麦克风权限未开启<br><small>请在浏览器设置中允许麦克风权限，<br>或使用下方文字输入</small>';
       } else if (e.error === 'no-speech') {
-        hint.textContent = '鏈娴嬪埌璇煶锛岃鍐嶈瘯涓€娆℃垨浣跨敤鏂囧瓧杈撳叆';
+        hint.textContent = '未检测到语音，请再试一次或使用文字输入';
       } else {
-        hint.textContent = '璇煶璇嗗埆澶辫触锛岃浣跨敤涓嬫柟鏂囧瓧杈撳叆';
+        hint.textContent = '语音识别失败，请使用下方文字输入';
       }
       hint.classList.remove('hidden');
       this.isRecording = false;
@@ -228,7 +229,7 @@ const App = {
       this.isRecording = true;
     } catch (err) {
       const hint = document.getElementById('recordHint');
-      hint.textContent = '璇煶鍚姩澶辫触锛岃浣跨敤涓嬫柟鏂囧瓧杈撳叆';
+      hint.textContent = '语音启动失败，请使用下方文字输入';
       hint.classList.remove('hidden');
       this.isRecording = false;
       this.updateRecordButton();
@@ -248,10 +249,10 @@ const App = {
     const icon = btn.querySelector('.record-icon');
     if (this.isRecording) {
       btn.classList.add('recording');
-      icon.textContent = '馃帣锔?;
+      icon.textContent = '🎙️';
     } else {
       btn.classList.remove('recording');
-      icon.textContent = '馃帳';
+      icon.textContent = '🎤';
     }
   },
 
@@ -277,7 +278,7 @@ const App = {
   async generateJournal() {
     const voice = this.currentTranscript.trim();
     const manual = document.getElementById('manualTextInput').value.trim();
-    const combined = [voice, manual].filter(Boolean).join('锛?);
+    const combined = [voice, manual].filter(Boolean).join('，');
     if (!combined) return;
 
     this.goToStep('result');
@@ -294,7 +295,7 @@ const App = {
 
       document.getElementById('resultTitle').textContent = result.title;
       document.getElementById('resultJournal').textContent = result.journal;
-      document.getElementById('resultPoem').textContent = result.poem ? `銆?{result.poem}銆峘 : '';
+      document.getElementById('resultPoem').textContent = result.poem ? `「${result.poem}」` : '';
       document.getElementById('resultMood').textContent = `${this.moodEmoji(result.mood)} ${result.mood}`;
       document.getElementById('resultTags').innerHTML = (result.tags || [])
         .map((t) => `<span class="tag">#${this.esc(t)}</span>`).join(' ');
@@ -364,7 +365,7 @@ const App = {
     document.getElementById('detailMood').textContent = `${this.moodEmoji(entry.mood)} ${entry.mood}`;
     document.getElementById('detailTitle').textContent = entry.title;
     document.getElementById('detailJournal').textContent = entry.journal;
-    document.getElementById('detailPoem').textContent = entry.poem ? `銆?{entry.poem}銆峘 : '';
+    document.getElementById('detailPoem').textContent = entry.poem ? `「${entry.poem}」` : '';
     document.getElementById('detailTranscript').textContent = entry.transcript;
     document.getElementById('detailTags').innerHTML = (entry.tags || [])
       .map((t) => `<span class="tag">#${this.esc(t)}</span>`).join(' ');
@@ -445,7 +446,7 @@ const App = {
   async deleteEntry() {
     const entry = this.entries[this.currentDetailIndex];
     if (!entry) return;
-    if (!confirm('纭畾鍒犻櫎杩欑瘒鎵嬭处鍚楋紵')) return;
+    if (!confirm('确定删除这篇手账吗？')) return;
     await Storage.deleteEntry(entry.id);
     this.closeDetail();
     await this.renderHome();
@@ -481,32 +482,32 @@ const App = {
   async saveSettings() {
     const provider = document.getElementById('providerSelect').value;
     const apiKey = document.getElementById('apiKeyInput').value.trim();
-    if (!apiKey) { alert('璇疯緭鍏?API Key'); return; }
+    if (!apiKey) { alert('请输入 API Key'); return; }
 
     const btn = document.getElementById('saveSettingsBtn');
     btn.disabled = true;
-    btn.textContent = '楠岃瘉涓?..';
+    btn.textContent = '验证中...';
 
     try {
       await AIClient.testConnection(provider, apiKey);
     } catch (e) {
-      alert('API Key 楠岃瘉澶辫触: ' + e.message);
+      alert('API Key 验证失败: ' + e.message);
       btn.disabled = false;
-      btn.textContent = '淇濆瓨鑷畾涔?Key';
+      btn.textContent = '保存自定义 Key';
       return;
     }
 
     await Storage.saveSettings({ provider, apiKey });
     this.api = new AIClient(provider, apiKey);
     btn.disabled = false;
-    btn.textContent = '淇濆瓨鑷畾涔?Key';
+    btn.textContent = '保存自定义 Key';
     this.closeSettings();
   },
 
   /* ============ Utilities ============ */
   moodEmoji(mood) {
-    const map = { '寮€蹇?: '馃槉', '骞抽潤': '馃槍', '鎰熷姩': '馃ス', '鍏村': '馃ぉ', '娌绘剤': '馃尶', '鐤叉儷': '馃槷鈥嶐煉?, '鎰熸仼': '馃檹' };
-    return map[mood] || '馃摑';
+    const map = { '开心': '😊', '平静': '😌', '感动': '🥹', '兴奋': '🤩', '治愈': '🌿', '疲惫': '😮‍💨', '感恩': '🙏' };
+    return map[mood] || '📝';
   },
 
   formatDate(iso, full = false) {
