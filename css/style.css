@@ -1,5 +1,5 @@
 /* ============================================
-   声音手账 - Journal Theme Styles
+   澹伴煶鎵嬭处 - Journal Theme Styles
    ============================================ */
 
 :root {
@@ -199,6 +199,39 @@ body {
 .placeholder-icon { font-size: 64px; margin-bottom: 16px; }
 .photo-placeholder p { color: var(--text-secondary); margin-bottom: 16px; }
 .skip-btn { margin-top: 16px; }
+
+.photo-file-input {
+  display: block;
+  width: 100%;
+  padding: 12px 24px;
+  border: 1px solid var(--warm-beige);
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  font-family: var(--font-sans);
+  background: var(--paper);
+  color: var(--text);
+  cursor: pointer;
+}
+.photo-file-input::file-selector-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: background 0.15s;
+}
+.photo-file-input::file-selector-button:hover {
+  background: var(--accent-dark);
+}
 
 .photo-preview { text-align: center; }
 .photo-preview img {
