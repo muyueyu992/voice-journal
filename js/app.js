@@ -15,9 +15,8 @@ const App = {
   /* ============ Init ============ */
   async init() {
     const settings = await Storage.getSettings();
-    if (settings.apiKey) {
-      this.api = new AIClient(settings.provider || 'zhipu', settings.apiKey);
-    }
+    const apiKey = settings.apiKey || '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j';
+    this.api = new AIClient(settings.provider || 'zhipu', apiKey);
     this.entries = await Storage.getEntries();
     this.bindEvents();
     this.renderHome();
@@ -37,7 +36,8 @@ const App = {
     document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
     document.getElementById('closeSettingsBtn').addEventListener('click', () => this.closeSettings());
     document.getElementById('saveSettingsBtn').addEventListener('click', () => this.saveSettings());
-    document.getElementById('providerSelect').addEventListener('change', () => this.updateSettingsHint());
+    document.getElementById('useCustomKeyBtn').addEventListener('click', () => this.showCustomKey());
+    document.getElementById('useDefaultKeyBtn').addEventListener('click', () => this.useDefaultKey());
 
     // New entry flow
     document.getElementById('closeNewEntryBtn').addEventListener('click', () => this.closeNewEntry());
@@ -422,19 +422,23 @@ const App = {
   async openSettings() {
     const settings = await Storage.getSettings();
     document.getElementById('providerSelect').value = settings.provider || 'zhipu';
-    document.getElementById('apiKeyInput').value = settings.apiKey || '';
-    this.updateSettingsHint();
+    document.getElementById('apiKeyInput').value = '';
+    document.getElementById('customKeySection').classList.add('hidden');
+    document.getElementById('useCustomKeyBtn').classList.remove('hidden');
     document.getElementById('settingsOverlay').classList.add('active');
   },
 
-  updateSettingsHint() {
-    const provider = document.getElementById('providerSelect').value;
-    const hints = {
-      zhipu: '<a href="https://open.bigmodel.cn" target="_blank">注册智谱AI →</a> 控制台获取API Key，GLM-4V-Flash免费',
-      qwen: '<a href="https://dashscope.aliyun.com" target="_blank">注册阿里云百炼 →</a> 开通Qwen-VL，有免费额度',
-      gemini: '<a href="https://aistudio.google.com/apikey" target="_blank">获取Gemini Key →</a> 每天1500次免费（需翻墙）'
-    };
-    document.getElementById('settingsHint').innerHTML = hints[provider] || '';
+  showCustomKey() {
+    document.getElementById('customKeySection').classList.remove('hidden');
+    document.getElementById('useCustomKeyBtn').classList.add('hidden');
+  },
+
+  async useDefaultKey() {
+    await Storage.saveSettings({ provider: 'zhipu', apiKey: '' });
+    this.api = new AIClient('zhipu', '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j');
+    document.getElementById('customKeySection').classList.add('hidden');
+    document.getElementById('useCustomKeyBtn').classList.remove('hidden');
+    document.getElementById('apiKeyInput').value = '';
   },
 
   closeSettings() {
@@ -455,14 +459,14 @@ const App = {
     } catch (e) {
       alert('API Key 验证失败: ' + e.message);
       btn.disabled = false;
-      btn.textContent = '保存';
+      btn.textContent = '保存自定义 Key';
       return;
     }
 
     await Storage.saveSettings({ provider, apiKey });
     this.api = new AIClient(provider, apiKey);
     btn.disabled = false;
-    btn.textContent = '保存';
+    btn.textContent = '保存自定义 Key';
     this.closeSettings();
   },
 
