@@ -3,13 +3,13 @@
    支持: 智谱 GLM / Gemini / 通义千问
    ============================================ */
 
-const JOURNAL_PROMPT_WITH_PHOTO = `用户原话："{TRANSCRIPT}"，附带照片。
-根据原话和照片，生成一篇温暖的手帐。只输出JSON，字段名固定如下，不要修改字段名：
-{"title":"手帐标题6字内","journal":"润色后的手帐正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1","标签2"],"poem":"短诗5字内"}`;
+const JOURNAL_PROMPT_WITH_PHOTO = `用户说："{TRANSCRIPT}"，附带照片。
+将用户原话微调通顺（最多增15字），根据内容判断心情和标签，生成一句短诗。只输出JSON：
+{"title":"标题","journal":"微调后的正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩 选一","tags":["标签1","标签2"],"poem":"短诗"}`;
 
-const JOURNAL_PROMPT_TEXT_ONLY = `用户原话："{TRANSCRIPT}"。
-根据原话生成一篇温暖的手帐。只输出JSON，字段名固定如下，不要修改字段名：
-{"title":"手帐标题6字内","journal":"润色后的手帐正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1","标签2"],"poem":"短诗5字内"}`;
+const JOURNAL_PROMPT_TEXT_ONLY = `用户说："{TRANSCRIPT}"。
+将用户原话微调通顺（最多增15字），根据内容判断心情和标签，生成一句短诗。只输出JSON：
+{"title":"标题","journal":"微调后的正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩 选一","tags":["标签1","标签2"],"poem":"短诗"}`;
 
 function buildZhipuContent(imageBase64, transcript) {
   const t = transcript || '（用户没有说话）';
@@ -36,7 +36,7 @@ const PROVIDERS = {
     buildRequest(imageBase64, transcript) {
       const hasImage = !!imageBase64;
       return {
-        model: hasImage ? 'glm-4v-flash' : 'glm-4-flash',
+        model: hasImage ? 'glm-4v-flash' : 'glm-4',
         messages: [{ role: 'user', content: buildZhipuContent(imageBase64, transcript) }],
         temperature: 0.9, max_tokens: 1024
       };
