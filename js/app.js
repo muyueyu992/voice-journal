@@ -118,18 +118,26 @@ const App = {
       </div>
     `}).join('');
 
-    // Card click → detail
+    // Card click → detail, long-press → delete
     container.querySelectorAll('.entry-card').forEach((card) => {
+      const idx = parseInt(card.dataset.index);
+      let longPressTimer = null;
+      let isLongPress = false;
+
       card.addEventListener('click', () => {
-        const idx = parseInt(card.dataset.index);
-        this.openDetail(idx);
+        if (!isLongPress) this.openDetail(idx);
+        isLongPress = false;
       });
-      // Long-press → delete
-      card.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        const idx = parseInt(card.dataset.index);
-        this.confirmDeleteFromList(idx);
-      });
+      card.addEventListener('touchstart', (e) => {
+        isLongPress = false;
+        longPressTimer = setTimeout(() => {
+          isLongPress = true;
+          this.confirmDeleteFromList(idx);
+        }, 600);
+      }, { passive: true });
+      card.addEventListener('touchend', () => clearTimeout(longPressTimer));
+      card.addEventListener('touchmove', () => clearTimeout(longPressTimer));
+      card.addEventListener('contextmenu', (e) => e.preventDefault());
     });
   },
 
