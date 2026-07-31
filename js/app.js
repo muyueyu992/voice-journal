@@ -15,8 +15,6 @@ const App = {
   detailIdx: -1,
   editPhoto: null,
   searchQuery: '',
-  shareEntryIdx: -1,
-  _shareReady: false,
 
   /* ===== init ===== */
   async init() {
@@ -62,8 +60,6 @@ const App = {
     $('#saveEditBtn').addEventListener('click', () => this.saveEdit());
     $('#editPhotoInput').addEventListener('change', (e) => this.gotEditPhoto(e));
     $('#deleteBtn').addEventListener('click', () => this.deleteEntry());
-    $('#shareDetailBtn').addEventListener('click', () => this.openShare(this.detailIdx));
-
     // Settings
     $('#settingsBtn').addEventListener('click', () => this.openSettings());
     $('#closeSettingsBtn').addEventListener('click', () => this.closeSettings());
@@ -75,10 +71,6 @@ const App = {
     $('#searchInput').addEventListener('input', () => this.onSearch());
     $('#clearSearchBtn').addEventListener('click', () => this.clearSearch());
 
-    // Share
-    $('#closeShareBtn').addEventListener('click', () => this.closeShare());
-    $('#downloadShareBtn').addEventListener('click', () => this.downloadShare());
-    $('#wechatShareBtn').addEventListener('click', () => this.shareToWechat());
   },
 
   /* ===== list ===== */
@@ -112,7 +104,7 @@ const App = {
       return `
       <div class="card" data-idx="${origIdx}">
         <div class="card-img" style="${e.photo ? `background-image:url(${e.photo})` : 'background:linear-gradient(135deg,#fdf2e9,#f5e6d3)'}"></div>
-        <div class="card-body" style="position:relative">
+        <div class="card-body">
           <div class="card-head">
             <span class="card-mood">${this.moodIcon(e.mood)}</span>
             <span class="card-date">${this.fmtDate(e.date)}</span>
@@ -121,22 +113,12 @@ const App = {
           <p class="card-preview">${this.esc(e.journal).substring(0,60)}...</p>
           ${e.poem ? `<p class="card-poem">「${this.esc(e.poem)}」</p>` : ''}
           <div class="tags">${(e.tags||[]).map(t=>`<span class="tag">#${this.esc(t)}</span>`).join('')}</div>
-          <button class="card-share" data-idx="${origIdx}">📤</button>
         </div>
       </div>
     `}).join('');
 
     list.querySelectorAll('.card').forEach(c => {
-      c.addEventListener('click', (ev) => {
-        if (ev.target.closest('.card-share')) return;
-        this.openDetail(parseInt(c.dataset.idx));
-      });
-    });
-    list.querySelectorAll('.card-share').forEach(btn => {
-      btn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        this.openShare(parseInt(btn.dataset.idx));
-      });
+      c.addEventListener('click', () => this.openDetail(parseInt(c.dataset.idx)));
     });
   },
 
@@ -509,183 +491,6 @@ const App = {
     $('#searchInput').value = '';
     $('#clearSearchBtn').classList.add('hidden');
     this.renderList();
-  },
-
-  /* ===== share ===== */
-  openShare(idx) {
-    const e = this.entries[idx];
-    if (!e) return;
-    this.shareEntryIdx = idx;
-    this._shareReady = false;
-    $('#shareOverlay').classList.add('on');
-    setTimeout(() => this.renderShareImage(e), 100);
-  },
-
-  closeShare() {
-    $('#shareOverlay').classList.remove('on');
-    this.shareEntryIdx = -1;
-  },
-
-  renderShareImage(e) {
-    const canvas = $('#shareCanvas');
-    const ctx = canvas.getContext('2d');
-    const W = 750;
-    const pad = 40;
-    const innerW = W - pad * 2;
-    let y = pad;
-
-    ctx.fillStyle = '#fefcf7';
-    ctx.fillRect(0, 0, W, 1000);
-
-    const drawRest = () => {
-      // Title
-      ctx.fillStyle = '#3d2e1f';
-      ctx.font = 'bold 36px STSong, Songti SC, "Noto Serif SC", KaiTi, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(e.title || '此刻', W/2, y + 40);
-      y += 80;
-
-      // Date + mood
-      ctx.fillStyle = '#8b7355';
-      ctx.font = '24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-      ctx.textAlign = 'center';
-      const dateStr = this.fmtDate(e.date, true);
-      const moodStr = `${this.moodIcon(e.mood)} ${e.mood || '平静'}`;
-      ctx.fillText(`${dateStr}  ${moodStr}`, W/2, y);
-      y += 50;
-
-      // Divider
-      y += 10;
-      ctx.strokeStyle = '#e8d5c4';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(W/4, y);
-      ctx.lineTo(W*3/4, y);
-      ctx.stroke();
-      y += 30;
-
-      // Poem
-      if (e.poem) {
-        ctx.fillStyle = '#d4a574';
-        ctx.font = 'italic 26px STSong, Songti SC, "Noto Serif SC", KaiTi, serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`「${e.poem}」`, W/2, y);
-        y += 50;
-      }
-
-      // Journal body
-      ctx.fillStyle = '#3d2e1f';
-      ctx.font = '28px STSong, Songti SC, "Noto Serif SC", KaiTi, serif';
-      ctx.textAlign = 'left';
-      const lines = this._wrapText(ctx, e.journal || '', innerW);
-      lines.forEach(line => {
-        ctx.fillText(line, pad, y);
-        y += 44;
-      });
-
-      y += 30;
-
-      // Tags
-      const tags = (e.tags || []).map(t => `#${t}`).join('  ');
-      if (tags) {
-        ctx.fillStyle = '#b8764a';
-        ctx.font = '22px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(tags, W/2, y);
-        y += 50;
-      }
-
-      // Footer
-      ctx.fillStyle = '#b8a590';
-      ctx.font = '22px STSong, Songti SC, "Noto Serif SC", KaiTi, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('— 旅行手帐 —', W/2, y);
-      y += 60;
-
-      // Resize canvas to fit
-      canvas.height = y;
-      canvas.width = W;
-      canvas.style.width = '100%';
-      canvas.style.height = 'auto';
-      this._shareReady = true;
-    };
-
-    if (e.photo) {
-      const img = new Image();
-      img.onload = () => {
-        const maxH = 400;
-        const scale = Math.min(innerW / img.width, maxH / img.height);
-        const iw = img.width * scale;
-        const ih = img.height * scale;
-        const ix = (W - iw) / 2;
-        ctx.save();
-        ctx.beginPath();
-        const r = 14;
-        ctx.moveTo(ix + r, y);
-        ctx.lineTo(ix + iw - r, y);
-        ctx.quadraticCurveTo(ix + iw, y, ix + iw, y + r);
-        ctx.lineTo(ix + iw, y + ih - r);
-        ctx.quadraticCurveTo(ix + iw, y + ih, ix + iw - r, y + ih);
-        ctx.lineTo(ix + r, y + ih);
-        ctx.quadraticCurveTo(ix, y + ih, ix, y + ih - r);
-        ctx.lineTo(ix, y + r);
-        ctx.quadraticCurveTo(ix, y, ix + r, y);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(img, ix, y, iw, ih);
-        ctx.restore();
-        y += ih + 30;
-        drawRest();
-      };
-      img.onerror = () => { drawRest(); };
-      img.src = e.photo;
-    } else {
-      drawRest();
-    }
-  },
-
-  _wrapText(ctx, text, maxW) {
-    const lines = [];
-    let cur = '';
-    for (const ch of text) {
-      const test = cur + ch;
-      if (ctx.measureText(test).width > maxW && cur) {
-        lines.push(cur);
-        cur = ch;
-      } else {
-        cur = test;
-      }
-    }
-    if (cur) lines.push(cur);
-    return lines.length ? lines : [text];
-  },
-
-  downloadShare() {
-    if (!this._shareReady) { alert('图片生成中，请稍后再试'); return; }
-    const canvas = $('#shareCanvas');
-    canvas.toBlob(function(blob) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = '旅行手帐_' + Date.now() + '.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-    }, 'image/png');
-  },
-
-  async shareToWechat() {
-    const canvas = $('#shareCanvas');
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-    const file = new File([blob], `旅行手帐_${Date.now()}.png`, { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({ files: [file], title: '旅行手帐' });
-    } else if (navigator.share) {
-      await navigator.share({ title: '旅行手帐', text: '分享我的手帐' });
-    } else {
-      alert('当前浏览器不支持分享，请使用"保存图片"功能');
-    }
   },
 
   /* ===== settings ===== */

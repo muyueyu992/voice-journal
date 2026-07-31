@@ -10,7 +10,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>旅行手帐</title>
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body>
   <div id="app">
@@ -172,7 +172,6 @@
           </div>
           <div id="viewActions" class="row-btns">
             <button id="editBtn" class="btn-outline flex-1">✏️ 编辑</button>
-            <button id="shareDetailBtn" class="btn-outline flex-1">📤 分享</button>
             <button id="deleteBtn" class="btn-danger flex-1">🗑️ 删除</button>
           </div>
           <div id="editActions" class="row-btns hidden">
@@ -180,25 +179,6 @@
             <button id="saveEditBtn" class="btn-primary flex-1">💾 保存修改</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- ====== Share Overlay ====== -->
-    <div id="shareOverlay" class="overlay">
-      <div class="overlay-top">
-        <button id="closeShareBtn" class="icon-btn">✕</button>
-        <span>分享手帐</span>
-        <span class="spacer"></span>
-      </div>
-      <div class="overlay-scroll">
-        <div class="share-preview">
-          <canvas id="shareCanvas"></canvas>
-        </div>
-        <div class="row-btns" style="padding:0 16px;">
-          <button id="downloadShareBtn" class="btn-outline flex-1">💾 保存图片</button>
-          <button id="wechatShareBtn" class="btn-primary flex-1">💚 分享到微信</button>
-        </div>
-        <p class="share-hint">微信分享：保存图片后，到微信中发送给朋友或朋友圈</p>
       </div>
     </div>
 
@@ -233,10 +213,11 @@
         </div>
       </div>
     </div>
+    <span id="versionTag" class="version-tag">v1.0</span>
   </div>
 
-  <script src="js/storage.js?v=11"></script>
-  <script src="js/ai.js?v=11"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/storage.js?v=12"></script>
+  <script src="js/ai.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>

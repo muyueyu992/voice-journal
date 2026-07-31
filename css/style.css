@@ -369,27 +369,11 @@ body {
   color:var(--text3);
 }
 
-/* ——— Card share ——— */
-.card-share {
-  position:absolute; bottom:10px; right:12px;
-  width:32px; height:32px; border:none;
-  background:var(--paper); border:1px solid var(--border);
-  border-radius:50%; font-size:16px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  z-index:2;
-}
-
-/* ——— Share overlay ——— */
-.share-preview {
-  width:100%; max-height:60vh; overflow:auto;
-  border-radius:var(--radius); box-shadow:var(--shadow);
-  margin-bottom:16px; background:var(--paper);
-  display:flex; justify-content:center;
-}
-.share-preview canvas { display:block; max-width:100%; height:auto; }
-.share-hint {
-  text-align:center; font-size:12px; color:var(--text3);
-  margin-top:16px; padding-bottom:40px;
+/* ——— Version ——— */
+.version-tag {
+  position:fixed; bottom:8px; right:10px;
+  font-size:10px; color:var(--text3);
+  pointer-events:none; z-index:5;
 }
 
 /* ——— Utility ——— */
