@@ -16,6 +16,7 @@ const App = {
   editPhoto: null,
   searchQuery: '',
   shareEntryIdx: -1,
+  _shareReady: false,
 
   /* ===== init ===== */
   async init() {
@@ -515,6 +516,7 @@ const App = {
     const e = this.entries[idx];
     if (!e) return;
     this.shareEntryIdx = idx;
+    this._shareReady = false;
     $('#shareOverlay').classList.add('on');
     setTimeout(() => this.renderShareImage(e), 100);
   },
@@ -605,6 +607,7 @@ const App = {
       canvas.width = W;
       canvas.style.width = '100%';
       canvas.style.height = 'auto';
+      this._shareReady = true;
     };
 
     if (e.photo) {
@@ -617,13 +620,24 @@ const App = {
         const ix = (W - iw) / 2;
         ctx.save();
         ctx.beginPath();
-        ctx.roundRect(ix, y, iw, ih, 14);
+        const r = 14;
+        ctx.moveTo(ix + r, y);
+        ctx.lineTo(ix + iw - r, y);
+        ctx.quadraticCurveTo(ix + iw, y, ix + iw, y + r);
+        ctx.lineTo(ix + iw, y + ih - r);
+        ctx.quadraticCurveTo(ix + iw, y + ih, ix + iw - r, y + ih);
+        ctx.lineTo(ix + r, y + ih);
+        ctx.quadraticCurveTo(ix, y + ih, ix, y + ih - r);
+        ctx.lineTo(ix, y + r);
+        ctx.quadraticCurveTo(ix, y, ix + r, y);
+        ctx.closePath();
         ctx.clip();
         ctx.drawImage(img, ix, y, iw, ih);
         ctx.restore();
         y += ih + 30;
         drawRest();
       };
+      img.onerror = () => { drawRest(); };
       img.src = e.photo;
     } else {
       drawRest();
@@ -647,11 +661,18 @@ const App = {
   },
 
   downloadShare() {
+    if (!this._shareReady) { alert('图片生成中，请稍后再试'); return; }
     const canvas = $('#shareCanvas');
-    const a = document.createElement('a');
-    a.download = `旅行手帐_${Date.now()}.png`;
-    a.href = canvas.toDataURL('image/png');
-    a.click();
+    canvas.toBlob(function(blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = '旅行手帐_' + Date.now() + '.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    }, 'image/png');
   },
 
   async shareToWechat() {
