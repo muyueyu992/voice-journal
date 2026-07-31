@@ -1,5 +1,5 @@
 /* ============================================
-   声音手账 v6 — Styles
+   旅行手帐 — Styles
    ============================================ */
 
 :root {
@@ -348,6 +348,49 @@ body {
   font-size:13px; line-height:1.8; margin-bottom:20px;
 }
 .privacy { text-align:center; margin-top:24px; font-size:11px; color:var(--text3); }
+
+/* ——— Search ——— */
+.search-box {
+  display:flex; align-items:center; gap:8px;
+  padding:10px 16px; background:var(--paper);
+  border-bottom:1px solid var(--border);
+}
+.search-icon { font-size:16px; flex-shrink:0; }
+.search-input {
+  flex:1; border:none; outline:none; font-size:14px;
+  font-family:var(--sans); background:transparent;
+  color:var(--text);
+}
+.search-input::placeholder { color:var(--text3); }
+.search-clear {
+  width:28px; height:28px; border:none; background:none;
+  font-size:14px; cursor:pointer; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:var(--text3);
+}
+
+/* ——— Card share ——— */
+.card-share {
+  position:absolute; bottom:10px; right:12px;
+  width:32px; height:32px; border:none;
+  background:var(--paper); border:1px solid var(--border);
+  border-radius:50%; font-size:16px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  z-index:2;
+}
+
+/* ——— Share overlay ——— */
+.share-preview {
+  width:100%; max-height:60vh; overflow:auto;
+  border-radius:var(--radius); box-shadow:var(--shadow);
+  margin-bottom:16px; background:var(--paper);
+  display:flex; justify-content:center;
+}
+.share-preview canvas { display:block; max-width:100%; height:auto; }
+.share-hint {
+  text-align:center; font-size:12px; color:var(--text3);
+  margin-top:16px; padding-bottom:40px;
+}
 
 /* ——— Utility ——— */
 .hidden { display:none !important; }

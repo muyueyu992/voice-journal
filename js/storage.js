@@ -1,5 +1,5 @@
 /* ============================================
-   声音手账 - IndexedDB 存储
+   旅行手帐 - IndexedDB 存储
    ============================================ */
 const DB_NAME = 'voice_journal_db';
 const DB_VERSION = 1;

@@ -1,7 +1,7 @@
 {
-  "name": "声音手账 - Voice Journal",
-  "short_name": "声音手账",
-  "description": "拍照+说话，AI 帮你生成精美手账",
+  "name": "旅行手帐 - Voice Journal",
+  "short_name": "旅行手帐",
+  "description": "拍照+说话，AI 帮你生成精美旅行手帐",
   "start_url": ".",
   "display": "standalone",
   "orientation": "portrait",

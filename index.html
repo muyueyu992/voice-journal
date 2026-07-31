@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#d4a574">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="声音手账">
+  <meta name="apple-mobile-web-app-title" content="旅行手帐">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <title>声音手账</title>
-  <link rel="stylesheet" href="css/style.css?v=8">
+  <title>旅行手帐</title>
+  <link rel="stylesheet" href="css/style.css?v=11">
 </head>
 <body>
   <div id="app">
@@ -19,12 +19,19 @@
       <div class="header-left">
         <span class="logo">📔</span>
         <div>
-          <h1>声音手账</h1>
+          <h1>旅行手帐</h1>
           <span id="countBadge" class="badge">0 篇</span>
         </div>
       </div>
       <button id="settingsBtn" class="icon-btn">⚙️</button>
     </header>
+
+    <!-- Search -->
+    <div id="searchBox" class="search-box">
+      <span class="search-icon">🔍</span>
+      <input id="searchInput" class="search-input" placeholder="搜索手帐..." autocomplete="off">
+      <button id="clearSearchBtn" class="search-clear hidden">✕</button>
+    </div>
 
     <!-- Entry List -->
     <main id="mainContent" class="main">
@@ -96,7 +103,10 @@
             <p>📝 或直接输入文字：</p>
             <textarea id="textInput" class="text-input" placeholder="写下你想说的话..."></textarea>
           </div>
-          <button id="genBtn" class="btn-primary btn-block" disabled>✨ 生成手账</button>
+          <div class="row-btns">
+            <button id="aiGenBtn" class="btn-outline flex-1" disabled>🤖 AI生成文案</button>
+            <button id="directSaveBtn" class="btn-primary flex-1" disabled>📝 录入文案</button>
+          </div>
         </div>
 
         <!-- result step -->
@@ -121,7 +131,7 @@
               </div>
             </div>
             <div class="row-btns">
-              <button id="discardBtn" class="btn-outline">丢弃</button>
+              <button id="discardBtn" class="btn-outline">📝 使用录入文案</button>
               <button id="regenBtn" class="btn-outline">🔄 换一个</button>
               <button id="saveBtn" class="btn-primary flex-2">💾 保存</button>
             </div>
@@ -162,6 +172,7 @@
           </div>
           <div id="viewActions" class="row-btns">
             <button id="editBtn" class="btn-outline flex-1">✏️ 编辑</button>
+            <button id="shareDetailBtn" class="btn-outline flex-1">📤 分享</button>
             <button id="deleteBtn" class="btn-danger flex-1">🗑️ 删除</button>
           </div>
           <div id="editActions" class="row-btns hidden">
@@ -169,6 +180,25 @@
             <button id="saveEditBtn" class="btn-primary flex-1">💾 保存修改</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ====== Share Overlay ====== -->
+    <div id="shareOverlay" class="overlay">
+      <div class="overlay-top">
+        <button id="closeShareBtn" class="icon-btn">✕</button>
+        <span>分享手帐</span>
+        <span class="spacer"></span>
+      </div>
+      <div class="overlay-scroll">
+        <div class="share-preview">
+          <canvas id="shareCanvas"></canvas>
+        </div>
+        <div class="row-btns" style="padding:0 16px;">
+          <button id="downloadShareBtn" class="btn-outline flex-1">💾 保存图片</button>
+          <button id="wechatShareBtn" class="btn-primary flex-1">💚 分享到微信</button>
+        </div>
+        <p class="share-hint">微信分享：保存图片后，到微信中发送给朋友或朋友圈</p>
       </div>
     </div>
 
@@ -184,7 +214,7 @@
           <div class="setting-row">
             <label>AI 服务商</label>
             <select id="providerSelect" class="setting-select">
-              <option value="zhipu">智谱 GLM（推荐）</option>
+              <option value="zhipu">智谱 GLM-4-Flash（推荐）</option>
               <option value="qwen">通义千问 Qwen-VL</option>
               <option value="gemini">Gemini 1.5 Flash</option>
             </select>
@@ -205,8 +235,8 @@
     </div>
   </div>
 
-  <script src="js/storage.js?v=8"></script>
-  <script src="js/ai.js?v=8"></script>
-  <script src="js/app.js?v=8"></script>
+  <script src="js/storage.js?v=11"></script>
+  <script src="js/ai.js?v=11"></script>
+  <script src="js/app.js?v=11"></script>
 </body>
 </html>

@@ -1,15 +1,11 @@
 /* ============================================
-   声音手账 - 多厂商 AI 模块
+   旅行手帐 - 多厂商 AI 模块
    支持: 智谱 GLM / Gemini / 通义千问
    ============================================ */
 
-const JOURNAL_PROMPT_WITH_PHOTO = `用户说："{TRANSCRIPT}"，附带照片。
-将用户原话微调通顺（最多增15字），根据内容判断心情和标签，生成一句短诗。只输出JSON：
-{"title":"标题","journal":"微调后的正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩 选一","tags":["标签1","标签2"],"poem":"短诗"}`;
+const JOURNAL_PROMPT_WITH_PHOTO = `用户说："{TRANSCRIPT}"，附带照片。微调通顺(最多增15字)，判心情和标签，写句短诗。只输出JSON：{"title":"标题","journal":"正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1"],"poem":"短诗"}`;
 
-const JOURNAL_PROMPT_TEXT_ONLY = `用户说："{TRANSCRIPT}"。
-将用户原话微调通顺（最多增15字），根据内容判断心情和标签，生成一句短诗。只输出JSON：
-{"title":"标题","journal":"微调后的正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩 选一","tags":["标签1","标签2"],"poem":"短诗"}`;
+const JOURNAL_PROMPT_TEXT_ONLY = `用户说："{TRANSCRIPT}"。微调通顺(最多增15字)，判心情和标签，写句短诗。只输出JSON：{"title":"标题","journal":"正文","mood":"开心/平静/感动/兴奋/治愈/疲惫/感恩","tags":["标签1"],"poem":"短诗"}`;
 
 function buildZhipuContent(imageBase64, transcript) {
   const t = transcript || '（用户没有说话）';
@@ -31,14 +27,14 @@ function buildGeminiParts(imageBase64, transcript) {
 
 const PROVIDERS = {
   zhipu: {
-    name: '智谱 GLM-4V',
+    name: '智谱 GLM-4-Flash',
     endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
     buildRequest(imageBase64, transcript) {
       const hasImage = !!imageBase64;
       return {
-        model: hasImage ? 'glm-4v-flash' : 'glm-4',
+        model: hasImage ? 'glm-4v-flash' : 'glm-4-flash',
         messages: [{ role: 'user', content: buildZhipuContent(imageBase64, transcript) }],
-        temperature: 0.9, max_tokens: 1024
+        temperature: 0.9, max_tokens: 400
       };
     },
     parseResponse(data) {
@@ -52,7 +48,7 @@ const PROVIDERS = {
     buildRequest(imageBase64, transcript) {
       return {
         contents: [{ parts: buildGeminiParts(imageBase64, transcript) }],
-        generationConfig: { temperature: 0.9, maxOutputTokens: 1024 }
+        generationConfig: { temperature: 0.9, maxOutputTokens: 400 }
       };
     },
     parseResponse(data) {
@@ -67,7 +63,7 @@ const PROVIDERS = {
       return {
         model: 'qwen-vl-plus',
         messages: [{ role: 'user', content: buildZhipuContent(imageBase64, transcript) }],
-        temperature: 0.9, max_tokens: 1024
+        temperature: 0.9, max_tokens: 400
       };
     },
     parseResponse(data) {
