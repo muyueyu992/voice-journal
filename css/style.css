@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    旅行手帐 — Styles
    ============================================ */
 
@@ -75,7 +75,8 @@ body {
 .card:active { transform:scale(0.98); }
 .card-img {
   width:100%; height:180px;
-  background-size:cover; background-position:center;
+  background-size:contain; background-position:center;
+  background-repeat:no-repeat;
 }
 .card-body { padding:14px 16px; }
 .card-head { display:flex; justify-content:space-between; margin-bottom:6px; }
@@ -298,8 +299,9 @@ body {
 
 /* ——— Detail ——— */
 .detail-photo {
-  width:100%; height:280px; background-size:cover;
-  background-position:center; position:relative;
+  width:100%; height:280px; background-size:contain;
+  background-position:center; background-repeat:no-repeat;
+  background-color:#f5f0e8; position:relative;
 }
 .detail-photo.no-img { height:0; }
 .edit-photo-btn {

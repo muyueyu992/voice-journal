@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    旅行手帐 — App
    ============================================ */
 
@@ -364,11 +364,13 @@ const App = {
   /* save */
   async save() {
     if (!this.generated) return;
+    const text = $('#textInput').value.trim();
+    const transcript = [this.transcript.trim(), text].filter(Boolean).join('，');
     const entry = {
       id: Date.now().toString(36)+Math.random().toString(36).substring(2,6),
       date: new Date().toISOString(),
       photo: this.photo,
-      transcript: this.transcript,
+      transcript,
       title: this.generated.title,
       journal: this.generated.journal,
       mood: this.generated.mood,
