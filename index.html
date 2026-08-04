@@ -199,15 +199,15 @@
               <option value="gemini">Gemini 1.5 Flash</option>
             </select>
           </div>
-          <p class="info-box">默认 AI 已配置好，直接使用即可。<br>如需用自己的 Key，点下方按钮设置。</p>
-          <button id="showCustomKeyBtn" class="btn-outline btn-block">使用自己的 API Key</button>
-          <div id="customKeyBox" class="hidden">
+          <p class="info-box">请先设置 API Key 才能使用 AI 功能。<br>支持智谱、Gemini、通义千问。</p>
+          <button id="showCustomKeyBtn" class="btn-outline btn-block" style="display:none">使用自己的 API Key</button>
+          <div id="customKeyBox">
             <div class="setting-row">
               <label>API Key</label>
               <input type="password" id="apiKeyInput" class="setting-input" placeholder="输入你的 API Key">
             </div>
-            <button id="saveKeyBtn" class="btn-primary btn-block">保存自定义 Key</button>
-            <button id="resetKeyBtn" class="btn-text">恢复默认 Key</button>
+            <button id="saveKeyBtn" class="btn-primary btn-block">保存 Key</button>
+            <button id="resetKeyBtn" class="btn-text" style="display:none">恢复默认 Key</button>
           </div>
           <p class="privacy">数据仅保存在手机本地，不上传任何服务器</p>
         </div>

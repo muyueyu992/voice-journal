@@ -19,8 +19,8 @@ const App = {
   /* ===== init ===== */
   async init() {
     const s = await Storage.getSettings();
-    const key = s.apiKey || '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j';
-    this.api = new AIClient(s.provider || 'zhipu', key);
+    const key = s.apiKey;
+    this.api = key ? new AIClient(s.provider || 'zhipu', key) : null;
     this.entries = await Storage.getEntries();
     this.bind();
     this.renderList();
@@ -500,8 +500,6 @@ const App = {
     const s = await Storage.getSettings();
     $('#providerSelect').value = s.provider || 'zhipu';
     $('#apiKeyInput').value = '';
-    $('#customKeyBox').classList.add('hidden');
-    $('#showCustomKeyBtn').classList.remove('hidden');
     $('#settingsOverlay').classList.add('on');
   },
 
@@ -509,9 +507,7 @@ const App = {
 
   async resetKey() {
     await Storage.saveSettings({ provider: 'zhipu', apiKey: '' });
-    this.api = new AIClient('zhipu', '35219dd3b6f441a5873d6d0c28b1de4e.r8Lb9LtVYFUa2U1j');
-    $('#customKeyBox').classList.add('hidden');
-    $('#showCustomKeyBtn').classList.remove('hidden');
+    this.api = null;
     $('#apiKeyInput').value = '';
   },
 
